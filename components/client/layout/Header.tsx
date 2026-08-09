@@ -48,6 +48,7 @@ export default function Header() {
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isMenuClosing, setIsMenuClosing] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
@@ -190,6 +191,15 @@ export default function Header() {
     };
   }, [pathname, userId, supabase]);
 
+
+  // Animated close: play the slide-out, then unmount once it finishes.
+  const closeMenu = () => {
+    setIsMenuClosing(true);
+    setTimeout(() => {
+      setIsMenuOpen(false);
+      setIsMenuClosing(false);
+    }, 250);
+  };
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -354,10 +364,10 @@ export default function Header() {
       {isMenuOpen && (
         <div className="fixed inset-0 z-[60] flex">
           <div
-            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-            onClick={() => setIsMenuOpen(false)}
-          /> 
-          <div className="relative w-72 bg-[#E8EDE5] h-full shadow-2xl flex flex-col px-4 pt-2 transform transition-transform animate-in slide-in-from-left duration-300">
+            className={`absolute inset-0 bg-black/50 backdrop-blur-sm duration-300 ${isMenuClosing ? "animate-out fade-out" : "animate-in fade-in"}`}
+            onClick={closeMenu}
+          />
+          <div className={`relative w-72 bg-[#E8EDE5] h-full shadow-2xl flex flex-col px-4 pt-2 duration-300 ease-out ${isMenuClosing ? "animate-out slide-out-to-left fade-out" : "animate-in slide-in-from-left fade-in"}`}>
             <div className="flex items-center justify-center mb-4 border-b border-border/60">
               <Image src="/ZIEA_Splash2.png" alt="ZIEA" width={500} height={500} className="h-24 w-auto object-contain" />
             </div>
@@ -369,7 +379,7 @@ export default function Header() {
                   <Link
                     key={index}
                     href={item.href || "#"}
-                    onClick={() => setIsMenuOpen(false)}
+                    onClick={closeMenu}
                     aria-current={isActive ? "page" : undefined}
                     className={`flex items-center gap-4 rounded-xl px-3 py-2.5 transition-colors ${
                       isActive
@@ -389,7 +399,7 @@ export default function Header() {
                 <nav className="flex flex-col gap-1">
                   <Link
                     href="/login"
-                    onClick={() => setIsMenuOpen(false)}
+                    onClick={closeMenu}
                     className="flex items-center gap-4 rounded-xl px-3 py-2.5 text-text/80 hover:bg-primary/10 hover:text-primary transition-colors"
                   >
                     <MdOutlineLogin className="text-2xl" />
@@ -397,7 +407,7 @@ export default function Header() {
                   </Link>
                   <Link
                     href="/signup"
-                    onClick={() => setIsMenuOpen(false)}
+                    onClick={closeMenu}
                     className="flex items-center gap-4 rounded-xl px-3 py-2.5 text-text/80 hover:bg-primary/10 hover:text-primary transition-colors"
                   >
                     <MdOutlinePersonAdd className="text-2xl" />

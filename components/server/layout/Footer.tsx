@@ -2,6 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { FaInstagram, FaWhatsapp, FaFacebook } from "react-icons/fa6";
 import NewsletterForm from "@/components/client/home/NewsletterForm";
+import ProtoformCredit from "@/components/client/layout/ProtoformCredit";
 import { getCategories } from "@/utils/categories";
 import { WHATSAPP_ORDER_NUMBER } from "@/utils/whatsapp";
 
@@ -186,12 +187,14 @@ export default async function Footer() {
 
         </div>
 
-        {/* Bottom */}
-        <div className="mt-12 border-t border-white/10 pt-6">
+        {/* Bottom — desktop: copyright left / credit right; mobile: stacked, both centered */}
+        <div className="mt-12 border-t border-white/10 pt-6 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
 
-          <p className="text-center text-[11px] uppercase tracking-[0.18em] text-white/60 md:text-left">
+          <p className="text-[11px] uppercase tracking-[0.18em] text-white/60 text-center md:text-left">
             © {new Date().getFullYear()} ZIEA. All Rights Reserved.
           </p>
+
+          <ProtoformCredit className="text-center md:text-right text-[11px] uppercase tracking-[0.18em] text-white/50" />
 
         </div>
 
