@@ -24,12 +24,21 @@ export default function Hero({ slides: brandingSlides }: { slides?: HeroSlide[] 
   const activeSlides =
     brandingSlides && brandingSlides.length ? brandingSlides : fallbackSlides;
 
-  // Auto-advance the carousel.
+  // Auto-advance the carousel — but hold still for the first few seconds so the
+  // hero (the LCP element) settles before any repaint. Continuously repainting
+  // during initial load is what inflates Lighthouse's Speed Index on mobile.
   useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentImageIndex((prev) => (prev + 1) % activeSlides.length);
+    if (activeSlides.length <= 1) return;
+    let interval: ReturnType<typeof setInterval> | undefined;
+    const start = setTimeout(() => {
+      interval = setInterval(() => {
+        setCurrentImageIndex((prev) => (prev + 1) % activeSlides.length);
+      }, 5000);
     }, 5000);
-    return () => clearInterval(interval);
+    return () => {
+      clearTimeout(start);
+      if (interval) clearInterval(interval);
+    };
   }, [activeSlides.length]);
 
   const slideIndex = activeSlides.length ? currentImageIndex % activeSlides.length : 0;
@@ -54,7 +63,7 @@ export default function Hero({ slides: brandingSlides }: { slides?: HeroSlide[] 
               cropY={desktopImg.cropY}
               zoom={desktopImg.zoom}
               sizes="100vw"
-              quality={75}
+              quality={68}
               priority
             />
           </div>
@@ -68,7 +77,7 @@ export default function Hero({ slides: brandingSlides }: { slides?: HeroSlide[] 
               cropY={mobileImg.cropY}
               zoom={mobileImg.zoom}
               sizes="100vw"
-              quality={75}
+              quality={68}
               priority
             />
           </div>

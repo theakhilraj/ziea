@@ -4,7 +4,7 @@
 import { rupees } from "@/utils/format";
 
 /** The business number that receives orders (same as the Footer contact line). */
-export const WHATSAPP_ORDER_NUMBER = "918139045083";
+export const WHATSAPP_ORDER_NUMBER = "918301027765";
 
 export interface OrderItem {
   name: string;
