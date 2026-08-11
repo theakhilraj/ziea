@@ -1,11 +1,19 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
+import { SITE_URL } from '@/utils/site';
 
 export async function GET(request: Request) {
-  const { searchParams, origin } = new URL(request.url);
+  const { searchParams } = new URL(request.url);
   const code = searchParams.get('code');
   // if "next" is in param, use it as the redirect URL
   const next = searchParams.get('next') ?? '/';
+
+  // Build post-login redirects from the canonical public origin (SITE_URL) —
+  // NOT from request.url. Behind a reverse proxy (e.g. the production Node host)
+  // the request URL's origin is the internal bind address (http://0.0.0.0:3000),
+  // which would strand the user on a dead URL after signing in. SITE_URL is
+  // env-controlled: https://ziea.in in prod, http://localhost:3000 in dev.
+  const origin = SITE_URL;
 
   if (code) {
     const supabase = await createClient();
