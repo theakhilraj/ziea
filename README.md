@@ -7,7 +7,7 @@ A single Next.js 16 application serving a public e‑commerce storefront and a p
 - **Ordering:** WhatsApp click‑to‑chat (`wa.me`) — order recorded in the DB, no payment gateway
 - **Design language:** calm, feminine "everyday luxury" — sage `#7A9268` / deep‑forest `#2C3829` on warm cream `#F5F0E8`
 
-> 📄 In‑depth docs live at the repo root: **`Ziea-Architecture.html`** (full system architecture + live Lighthouse metrics) and **`Ziea-Deployment.html`** (step‑by‑step deployment guide). Open either in a browser.
+> 📄 In‑depth docs live at the repo root: **`Ziea-Architecture.html`** (full system architecture + live Lighthouse metrics). Open either in a browser.
 
 ---
 
