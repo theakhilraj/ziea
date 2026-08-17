@@ -4,6 +4,7 @@ import Header from '../../components/client/layout/Header';
 import Footer from '../../components/server/layout/Footer';
 import ListManager, { type ListItem } from '../../components/client/shop/ListManager';
 import { createClient } from '@/utils/supabase/server';
+import { getCategories, slugForCategoryId } from '@/utils/categories';
 import { formatINR } from '@/utils/price';
 import { MdOutlineShoppingBag } from 'react-icons/md';
 
@@ -18,6 +19,7 @@ type JoinedProduct = {
   id: string;
   product_code: string;
   name: string;
+  category_id: string | null;
   discounted_price: number | null;
   original_price: number | null;
   images: { url: string }[] | null;
@@ -39,13 +41,16 @@ export default async function CartPage() {
   let items: ListItem[] = [];
 
   if (user) {
-    const { data } = await supabase
-      .from('cart_items')
-      .select(
-        'id, size, quantity, products(id, product_code, name, discounted_price, original_price, images)'
-      )
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false });
+    const [{ data }, categories] = await Promise.all([
+      supabase
+        .from('cart_items')
+        .select(
+          'id, size, quantity, products(id, product_code, name, category_id, discounted_price, original_price, images)'
+        )
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false }),
+      getCategories(),
+    ]);
 
     items = ((data ?? []) as CartRow[])
       .map((row): ListItem | null => {
@@ -56,6 +61,7 @@ export default async function CartPage() {
           id: row.id,
           productId: product.id,
           productCode: product.product_code,
+          categorySlug: slugForCategoryId(categories, product.category_id),
           title: product.name,
           variant: row.size ?? '',
           size: row.size,

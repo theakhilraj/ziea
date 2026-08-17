@@ -8,6 +8,7 @@ import { QuantityStepper } from "@/components/ui/QuantityStepper";
 import { Select } from "@/components/ui/Select";
 import Toast from "@/components/ui/Toast";
 import { orderHref, type OrderItem } from "@/utils/whatsapp";
+import { newOrderGroup } from "@/utils/orders";
 import type { ProductSize } from "@/types/product";
 
 // Strict validation for the optional guest contact fields: empty is allowed,
@@ -131,6 +132,10 @@ export default function BuyNowModal({
     setErrors({});
     setSubmitting(true);
 
+    // A group id + order number even for a single item, so it appears as one
+    // order in "My Orders" and shares the ref shown in the WhatsApp chat.
+    const { orderGroupId, orderNumber } = newOrderGroup();
+
     // Record the order first (fire-and-forget) so the lead is never lost, then
     // open WhatsApp synchronously within the click gesture so it isn't blocked.
     void supabase
@@ -148,6 +153,8 @@ export default function BuyNowModal({
         subtotal,
         status: "Initiated",
         source: "buy_now",
+        order_group_id: orderGroupId,
+        order_number: orderNumber,
       })
       .then(() => {});
 
@@ -161,7 +168,7 @@ export default function BuyNowModal({
       })
       .then(() => {});
 
-    window.open(orderHref([item]), "_blank", "noopener,noreferrer");
+    window.open(orderHref([item], orderNumber), "_blank", "noopener,noreferrer");
 
     setToast({ show: true, message: "Opening WhatsApp… your order is saved", error: false });
     setTimeout(() => {

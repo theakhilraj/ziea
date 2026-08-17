@@ -13,6 +13,7 @@ import ConfirmationModal from "../../ui/ConfirmationModal";
 import {
   MdSearch,
   MdOutlineFavoriteBorder,
+  MdOutlineReceiptLong,
   MdOutlineShoppingBag,
   MdOutlinePerson,
   MdOutlineLogout,
@@ -46,11 +47,13 @@ export default function Header() {
   // effect that depends on `supabase` re-runs on each render (badge-count refetch storm).
   const supabase = useMemo(() => createClient(), []);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const mobileDropdownRef = useRef<HTMLDivElement>(null);
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isMenuClosing, setIsMenuClosing] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isMobileUserOpen, setIsMobileUserOpen] = useState(false);
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
@@ -70,6 +73,9 @@ export default function Header() {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsDropdownOpen(false);
+      }
+      if (mobileDropdownRef.current && !mobileDropdownRef.current.contains(event.target as Node)) {
+        setIsMobileUserOpen(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -222,6 +228,7 @@ export default function Header() {
   const menuItems = [
     { icon: <MdHome className="text-2xl" />, label: "Home", href: "/" },
     { icon: <MdOutlineStyle className="text-2xl" />, label: "Collections", href: "/collections" },
+    { icon: <MdOutlineReceiptLong className="text-2xl" />, label: "My Orders", href: "/orders" },
     { icon: <MdOutlineInfo className="text-2xl" />, label: "About Us", href: "/about-us" },
     { icon: <MdOutlineMail className="text-2xl" />, label: "Contact Us", href: "/contact-us" },
     { icon: <MdOutlineInventory2 className="text-2xl" />, label: "Bulk Orders", href: "/contact-us?type=collaboration" },
@@ -262,6 +269,9 @@ export default function Header() {
                     {wishlistCount > 99 ? '99+' : wishlistCount}
                   </span>
                 )}
+              </Link>
+              <Link href="/orders" aria-label="My Orders" className="text-text hover:text-primary transition-colors flex items-center">
+                <MdOutlineReceiptLong className="text-2xl" />
               </Link>
               <Link href="/cart" aria-label="Cart" className="relative text-text hover:text-primary transition-colors flex items-center">
                 <MdOutlineShoppingBag className="text-2xl" />
@@ -351,10 +361,27 @@ export default function Header() {
               <div className="w-8 h-8 rounded-full bg-muted/20 animate-pulse"></div>
             </div>
           ) : user && profile ? (
-            <div className="ml-1 flex items-center">
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center font-jost font-medium text-xs shadow-sm ${getAvatarColor()}`}>
+            <div className="relative ml-1 flex items-center" ref={mobileDropdownRef}>
+              <button
+                type="button"
+                aria-label="Account menu"
+                onClick={() => setIsMobileUserOpen((v) => !v)}
+                className={`w-8 h-8 rounded-full flex items-center justify-center font-jost font-medium text-xs shadow-sm active:scale-95 transition-transform ${getAvatarColor()}`}
+              >
                 {getInitials()}
-              </div>
+              </button>
+
+              {isMobileUserOpen && (
+                <div className="absolute right-0 top-full mt-2 w-44 bg-white rounded-2xl shadow-xl py-2 border border-black/5 animate-in fade-in slide-in-from-top-2 z-[70]">
+                  <button
+                    onClick={() => { setIsMobileUserOpen(false); setIsLogoutModalOpen(true); }}
+                    className="w-full flex items-center gap-3 px-4 py-3 text-sm text-red-500 hover:bg-red-50 transition-colors text-left"
+                  >
+                    <MdOutlineLogout className="text-xl" />
+                    Logout
+                  </button>
+                </div>
+              )}
             </div>
           ) : null}
         </div>

@@ -180,7 +180,7 @@ export default function ContactForm() {
 
             <Input
               label="Full Name"
-              placeholder="Aisha Nair"
+              placeholder="John Doe"
               type="text"
               required
               value={name}
@@ -189,7 +189,7 @@ export default function ContactForm() {
 
             <Input
               label="Email Address"
-              placeholder="aisha@example.com"
+              placeholder="john@example.com"
               type="email"
               required
               value={email}

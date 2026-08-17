@@ -54,6 +54,9 @@ export interface Product {
 export interface ProductCardProps {
     id: string;
     productCode: string;
+    /** Category slug for the canonical /collections/{category}/{code} URL.
+     *  Omit when unknown (client search/wishlist) — the flat link 308-redirects. */
+    categorySlug?: string;
     title: string;
     originalPrice: number;
     discountedPrice: number;

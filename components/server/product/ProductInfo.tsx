@@ -1,4 +1,5 @@
-import { MdOutlineLocalShipping } from 'react-icons/md';
+import Link from 'next/link';
+import { MdOutlineLocalShipping, MdOutlineSwapHoriz } from 'react-icons/md';
 import DiscountPercent from '@/components/client/product/DiscountPercent';
 import { deliveryByLabel } from '@/utils/price';
 
@@ -42,6 +43,15 @@ export default function ProductInfo({
             Deliverable by or before {deliveryLabel}
           </p>
         )}
+        {/* Exchange availability — clickable, opens the full policy. Store is
+            exchange-only within 7 days of delivery (see /exchange-policy). */}
+        <Link
+          href="/exchange-policy"
+          className="flex w-fit items-center gap-1.5 pt-1 text-[13px] font-semibold text-[#4c623d] underline-offset-2 hover:underline"
+        >
+          <MdOutlineSwapHoriz className="text-[16px]" />
+          7-Day Exchange Available
+        </Link>
       </div>
 
       {/* Description content (no heading) */}

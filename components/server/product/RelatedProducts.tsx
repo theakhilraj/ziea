@@ -1,6 +1,7 @@
 import React from 'react';
 import ProductCard from '@/components/client/product/ProductCard';
 import { getRelatedProducts } from '@/utils/products';
+import { getCategories, slugForCategoryId } from '@/utils/categories';
 
 interface RelatedProductsProps {
   categoryId: string | null;
@@ -8,7 +9,10 @@ interface RelatedProductsProps {
 }
 
 export default async function RelatedProducts({ categoryId, excludeId }: RelatedProductsProps) {
-  const products = await getRelatedProducts(categoryId, excludeId);
+  const [products, categories] = await Promise.all([
+    getRelatedProducts(categoryId, excludeId),
+    getCategories(),
+  ]);
 
   if (products.length === 0) return null;
 
@@ -21,6 +25,7 @@ export default async function RelatedProducts({ categoryId, excludeId }: Related
             key={product.id}
             id={product.id}
             productCode={product.product_code}
+            categorySlug={slugForCategoryId(categories, product.category_id)}
             title={product.name}
             originalPrice={product.original_price ?? 0}
             discountedPrice={product.discounted_price ?? product.original_price ?? 0}

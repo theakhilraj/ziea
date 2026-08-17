@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { buildOrderMessage, WHATSAPP_ORDER_NUMBER, type OrderItem } from "@/utils/whatsapp";
+import { newOrderGroup } from "@/utils/orders";
 import Toast from "@/components/ui/Toast";
 import { Button } from "@/components/ui/Button";
 import type { ListItem } from "./ListManager";
@@ -30,10 +31,14 @@ export default function CartCheckoutButton({ items }: { items: ListItem[] }) {
       unitPrice: i.priceValue,
     }));
 
+    // One group id + order number for the whole checkout, so all line items read
+    // back as a single order in "My Orders" and the ref is shared in the chat.
+    const { orderGroupId, orderNumber } = newOrderGroup();
+
     // Open WhatsApp synchronously within the click gesture (the message only
     // needs the product data), so the popup isn't blocked.
     const href = `https://wa.me/${WHATSAPP_ORDER_NUMBER}?text=${encodeURIComponent(
-      buildOrderMessage(orderItems),
+      buildOrderMessage(orderItems, orderNumber),
     )}`;
     window.open(href, "_blank", "noopener,noreferrer");
 
@@ -69,6 +74,8 @@ export default function CartCheckoutButton({ items }: { items: ListItem[] }) {
           subtotal: i.priceValue * (i.quantity ?? 1),
           status: "Initiated",
           source: "cart",
+          order_group_id: orderGroupId,
+          order_number: orderNumber,
         }));
         await supabase.from("orders").insert(rows);
         await supabase.from("activity_logs").insert({

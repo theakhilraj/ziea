@@ -2,6 +2,7 @@ import Link from "next/link";
 import { MdOutlineChevronLeft, MdOutlineChevronRight } from "react-icons/md";
 import ProductCard from "../../client/product/ProductCard";
 import { type ProductSort } from "@/utils/products";
+import { slugForCategoryId, type StoreCategory } from "@/utils/categories";
 import type { Product } from "@/types/product";
 
 /** Products per page on the storefront Collections grid.
@@ -11,6 +12,8 @@ export const PAGE_SIZE = 32;
 interface ProductGridProps {
   items: Product[];
   total: number;
+  /** Category list used to build each card's canonical product URL slug. */
+  categories?: StoreCategory[];
   category?: string;
   page?: number;
   q?: string;
@@ -32,6 +35,7 @@ interface ProductGridProps {
 export default function ProductGrid({
   items,
   total,
+  categories = [],
   category,
   page,
   q,
@@ -91,6 +95,7 @@ export default function ProductGrid({
             key={p.id}
             id={p.id}
             productCode={p.product_code}
+            categorySlug={slugForCategoryId(categories, p.category_id)}
             title={p.name}
             originalPrice={p.original_price ?? 0}
             discountedPrice={p.discounted_price ?? p.original_price ?? 0}

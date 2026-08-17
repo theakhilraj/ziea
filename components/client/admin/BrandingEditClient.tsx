@@ -10,6 +10,7 @@ import Toast from '@/components/ui/Toast';
 import ImageUploader from '@/components/ui/ImageUploader';
 import {
   BRANDING_SCHEMA,
+  aspectResolution,
   toBrandImage,
   toBrandImageList,
   toHeroSlide,
@@ -152,11 +153,11 @@ export default function BrandingEditClient({ section }: { section: any }) {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <p className="flex items-center gap-1.5 font-jost text-xs uppercase tracking-wide text-[#2C3829]/60 mb-2"><MdDesktopMac /> Desktop (16:9)</p>
+                  <p className="flex items-center gap-1.5 font-jost text-xs uppercase tracking-wide text-[#2C3829]/60 mb-2"><MdDesktopMac /> Desktop ({aspectResolution('16/9')})</p>
                   <ImageUploader value={slide.desktop} onChange={(v) => updateSlide(slide.id, { desktop: v })} folder="branding/home" aspect="16/9" />
                 </div>
                 <div>
-                  <p className="flex items-center gap-1.5 font-jost text-xs uppercase tracking-wide text-[#2C3829]/60 mb-2"><MdSmartphone /> Mobile (4:5)</p>
+                  <p className="flex items-center gap-1.5 font-jost text-xs uppercase tracking-wide text-[#2C3829]/60 mb-2"><MdSmartphone /> Mobile ({aspectResolution('4/5')})</p>
                   <ImageUploader value={slide.mobile} onChange={(v) => updateSlide(slide.id, { mobile: v })} folder="branding/home" aspect="4/5" />
                 </div>
               </div>
@@ -170,8 +171,11 @@ export default function BrandingEditClient({ section }: { section: any }) {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {schema.slots.map((slot) => (
             <div key={slot.key} className="rounded-2xl border border-[#d6c3b3]/30 bg-white p-5 lg:p-6">
-              <h3 className="font-jost font-semibold text-[#2C3829] mb-1">{slot.label}</h3>
-              {slot.hint && <p className="text-xs text-[#2C3829]/50 mb-4">{slot.hint}</p>}
+              <div className="mb-4">
+                <h3 className="font-jost font-semibold text-[#2C3829] mb-1">{slot.label}</h3>
+                <p className="font-jost text-xs uppercase tracking-wide text-[#2C3829]/60">{aspectResolution(slot.aspect)}</p>
+                {slot.hint && <p className="text-xs text-[#2C3829]/50 mt-1">{slot.hint}</p>}
+              </div>
 
               {slot.kind === 'single' ? (
                 <ImageUploader

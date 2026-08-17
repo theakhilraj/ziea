@@ -121,6 +121,7 @@ export default async function CollectionsPage({ searchParams }: CollectionsPageP
         <ProductGrid
           items={productData.items}
           total={productData.total}
+          categories={categories}
           category={category}
           page={normalizedPage}
           q={q}

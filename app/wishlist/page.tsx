@@ -4,6 +4,7 @@ import Header from '../../components/client/layout/Header';
 import Footer from '../../components/server/layout/Footer';
 import ListManager, { type ListItem } from '../../components/client/shop/ListManager';
 import { createClient } from '@/utils/supabase/server';
+import { getCategories, slugForCategoryId } from '@/utils/categories';
 import { formatINR } from '@/utils/price';
 import { MdOutlineFavoriteBorder } from 'react-icons/md';
 
@@ -19,6 +20,7 @@ type JoinedProduct = {
   product_code: string;
   name: string;
   material: string | null;
+  category_id: string | null;
   discounted_price: number | null;
   original_price: number | null;
   images: { url: string }[] | null;
@@ -38,13 +40,16 @@ export default async function WishlistPage() {
   let items: ListItem[] = [];
 
   if (user) {
-    const { data } = await supabase
-      .from('wishlist_items')
-      .select(
-        'id, products(id, product_code, name, material, discounted_price, original_price, images)'
-      )
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false });
+    const [{ data }, categories] = await Promise.all([
+      supabase
+        .from('wishlist_items')
+        .select(
+          'id, products(id, product_code, name, material, category_id, discounted_price, original_price, images)'
+        )
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false }),
+      getCategories(),
+    ]);
 
     items = ((data ?? []) as WishlistRow[])
       .map((row): ListItem | null => {
@@ -55,6 +60,7 @@ export default async function WishlistPage() {
           id: row.id,
           productId: product.id,
           productCode: product.product_code,
+          categorySlug: slugForCategoryId(categories, product.category_id),
           title: product.name,
           variant: product.material ?? '',
           priceValue,

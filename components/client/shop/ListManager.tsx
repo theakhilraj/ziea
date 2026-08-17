@@ -14,6 +14,8 @@ export interface ListItem {
   /** The underlying product id (used for wishlist/cart mutations). */
   productId: string;
   productCode: string;
+  /** Category slug for the canonical /collections/{category}/{code} URL. */
+  categorySlug?: string;
   title: string;
   /** Human-readable secondary line (size for cart, material for wishlist). */
   variant: string;

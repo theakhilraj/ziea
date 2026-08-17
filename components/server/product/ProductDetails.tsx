@@ -38,7 +38,7 @@ export default function ProductDetails({
       ),
     },
     contents && {
-      title: 'Contents',
+      title: 'Product Details',
       content: (
         <div className="rich-text-content" dangerouslySetInnerHTML={{ __html: contents }} />
       ),

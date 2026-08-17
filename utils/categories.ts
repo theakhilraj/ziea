@@ -1,9 +1,12 @@
 import { unstable_cache } from "next/cache";
 import { createPublicClient } from "@/utils/supabase/public";
+import { slugifyCategory, CATEGORY_FALLBACK_SLUG } from "@/utils/slug";
 
 export interface StoreCategory {
   id: string;
   name: string;
+  /** URL-friendly slug derived from `name` (no DB column). Decorates product URLs. */
+  slug: string;
   image_url: string;
   /** Product-model crop, normalized from the DB columns for SmartImage. */
   cropX: number; // 0–100
@@ -48,6 +51,7 @@ export const getCategories = unstable_cache(
     return (data ?? []).map((row) => ({
       id: row.id as string,
       name: row.name as string,
+      slug: slugifyCategory(row.name as string),
       image_url: row.image_url as string,
       ...normalizeCrop(row),
     }));
@@ -55,3 +59,16 @@ export const getCategories = unstable_cache(
   ["storefront-categories"],
   { tags: ["categories"], revalidate: 3600 },
 );
+
+/**
+ * Resolve a category id into its URL slug, using the (cached) category list.
+ * Returns the fallback segment when the id is null or unknown, so product URLs
+ * always have a valid category segment.
+ */
+export function slugForCategoryId(
+  categories: StoreCategory[],
+  id: string | null,
+): string {
+  if (!id) return CATEGORY_FALLBACK_SLUG;
+  return categories.find((c) => c.id === id)?.slug ?? CATEGORY_FALLBACK_SLUG;
+}

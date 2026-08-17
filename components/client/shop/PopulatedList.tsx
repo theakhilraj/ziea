@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/Button';
 import { updateCartQty, removeCartItem, addToCart } from '@/app/actions/cart';
 import { removeWishlistItem } from '@/app/actions/wishlist';
 import { notifyCountsChanged } from '@/utils/counts';
+import { productPath } from '@/utils/slug';
 
 interface PopulatedListProps {
   items: ListItem[];
@@ -67,7 +68,7 @@ export default function PopulatedList({ items, type }: PopulatedListProps) {
           <div key={item.id} className="flex flex-col group relative">
             {/* Image — matches the collections ProductCard (4:5, surface, sizes) */}
             <div className="relative overflow-hidden rounded-xl bg-surface shadow-[0px_2px_16px_rgba(44,56,41,0.08)] aspect-[4/5] mb-4">
-              <Link href={`/collections/${item.productCode}`} className="block absolute inset-0">
+              <Link href={productPath(item.productCode, item.categorySlug)} className="block absolute inset-0">
                 <Image
                   src={item.image}
                   alt={item.title}
@@ -97,7 +98,7 @@ export default function PopulatedList({ items, type }: PopulatedListProps) {
             </div>
 
             <div className="space-y-1">
-              <Link href={`/collections/${item.productCode}`}>
+              <Link href={productPath(item.productCode, item.categorySlug)}>
                 <h3 className="font-label-md text-text line-clamp-2 min-h-[2.5rem] hover:text-primary transition-colors">{item.title}</h3>
               </Link>
               {item.variant ? (

@@ -2,12 +2,16 @@
 
 import React, { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { MdOutlineLocalShipping, MdOutlineEco, MdOutlineVerifiedUser, MdBolt } from 'react-icons/md';
+import { MdOutlineLocalShipping, MdOutlineEco, MdOutlineVerifiedUser, MdBolt, MdFavorite, MdOutlineFavoriteBorder } from 'react-icons/md';
 import type { ProductSize } from '@/types/product';
 import { QuantityStepper } from '@/components/ui/QuantityStepper';
 import { addToCart } from '@/app/actions/cart';
 import { notifyCountsChanged } from '@/utils/counts';
+import { useWishlist } from '@/components/client/product/WishlistProvider';
 import BuyNowModal from '@/components/client/product/BuyNowModal';
+
+// Same vivid red as the product-card heart, for a consistent wishlist state.
+const WISHLIST_RED = '#E63946';
 
 interface ProductActionsProps {
   productId: string;
@@ -27,6 +31,8 @@ export default function ProductActions({
   imageUrl,
 }: ProductActionsProps) {
   const router = useRouter();
+  const { isWishlisted, toggle: toggleWishlist } = useWishlist();
+  const isFavorite = isWishlisted(productId);
   const availableSizes = sizes ?? [];
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
@@ -138,6 +144,26 @@ export default function ProductActions({
           }`}
         >
           {isAdded ? "Added!" : "Add to Cart"}
+        </button>
+
+        {/* Add to Wishlist — optimistic toggle; syncs with the grid hearts and
+            redirects to /login when signed out (handled by the provider). */}
+        <button
+          type="button"
+          onClick={() => toggleWishlist(productId)}
+          aria-pressed={isFavorite}
+          className={`w-full rounded-full py-4 font-jost font-medium text-lg border flex items-center justify-center gap-2 transition-all active:scale-[0.98] ${
+            isFavorite
+              ? "border-[#E63946]/40 text-[#E63946] bg-[#E63946]/5"
+              : "border-[#2C3829] text-[#2C3829] hover:bg-[#2C3829]/5"
+          }`}
+        >
+          {isFavorite ? (
+            <MdFavorite className="text-xl" style={{ color: WISHLIST_RED }} />
+          ) : (
+            <MdOutlineFavoriteBorder className="text-xl" />
+          )}
+          {isFavorite ? "In Wishlist" : "Add to Wishlist"}
         </button>
       </div>
 

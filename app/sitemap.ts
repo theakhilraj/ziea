@@ -1,7 +1,8 @@
 import type { MetadataRoute } from "next";
 import { SITE_URL } from "@/utils/site";
 import { getAllPublishedSlugs } from "@/utils/products";
-import { getCategories } from "@/utils/categories";
+import { getCategories, slugForCategoryId } from "@/utils/categories";
+import { productPath } from "@/utils/slug";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const [products, categories] = await Promise.all([
@@ -29,7 +30,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }));
 
   const productRoutes: MetadataRoute.Sitemap = products.map((p) => ({
-    url: `${SITE_URL}/collections/${p.code}`,
+    url: `${SITE_URL}${productPath(p.code, slugForCategoryId(categories, p.categoryId))}`,
     lastModified: p.updatedAt ? new Date(p.updatedAt) : now,
     changeFrequency: "weekly",
     priority: 0.8,

@@ -27,7 +27,7 @@ export default async function EditorialCTA() {
               {categories.map((category) => (
                 <Link
                   key={category.id}
-                  href="/collections"
+                  href={`/collections?category=${category.id}`}
                   className="flex justify-center items-center cormorant text-xl text-on-surface-variant hover:text-primary transition-colors"
                 >
                   {category.name}

@@ -277,7 +277,7 @@ export const getLatestProducts = unstable_cache(
     const { data, error } = await supabase
       .from("products")
       .select(
-        "id, product_code, name, original_price, discounted_price, images, badges, delivery_days",
+        "id, product_code, name, category_id, original_price, discounted_price, images, badges, delivery_days",
       )
       .eq("is_published", true)
       .eq("status", "published")
@@ -318,18 +318,21 @@ export const getProductByCode = unstable_cache(
  * generateStaticParams. Cached (public client, tagged `products`).
  */
 export const getAllPublishedSlugs = unstable_cache(
-  async (): Promise<{ code: string; updatedAt: string }[]> => {
+  async (): Promise<{ code: string; updatedAt: string; categoryId: string | null }[]> => {
     const supabase = createPublicClient();
     const { data, error } = await supabase
       .from("products")
-      .select("product_code, created_at")
+      .select("product_code, created_at, category_id")
       .eq("is_published", true)
       .eq("status", "published");
     if (error) console.error("getAllPublishedSlugs:", error.message);
-    return (data ?? []).map((r: { product_code: string; created_at: string }) => ({
-      code: r.product_code,
-      updatedAt: r.created_at,
-    }));
+    return (data ?? []).map(
+      (r: { product_code: string; created_at: string; category_id: string | null }) => ({
+        code: r.product_code,
+        updatedAt: r.created_at,
+        categoryId: r.category_id,
+      }),
+    );
   },
   ["storefront-slugs"],
   { tags: ["products"], revalidate: 3600 },

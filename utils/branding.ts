@@ -71,6 +71,18 @@ export const BRANDING_SCHEMA: Record<string, SectionSchema> = {
   },
 };
 
+/**
+ * Recommended upload resolution (px) for an aspect ratio like "16/9".
+ * Landscape ratios anchor at 1920px wide; portrait/square at 1080px wide.
+ * e.g. "16/9" → "1920 × 1080", "4/5" → "1080 × 1350", "1/1" → "1080 × 1080".
+ */
+export function aspectResolution(aspect: string): string {
+  const [w, h] = aspect.split("/").map(Number);
+  if (!w || !h) return "";
+  if (w > h) return `${1920} × ${Math.round((1920 * h) / w)}`;
+  return `${1080} × ${Math.round((1080 * h) / w)}`;
+}
+
 // ── Parsing helpers ───────────────────────────────────────────────────────────
 function num(v: unknown, d: number): number {
   const n = typeof v === "number" ? v : parseFloat(String(v));

@@ -1,25 +1,19 @@
 "use client";
 
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createPortal } from "react-dom";
-import { MdSearch, MdArrowBack, MdClose } from "react-icons/md";
-import { createClient } from "@/utils/supabase/client";
+import { MdSearch, MdArrowBack, MdClose, MdOutlineCategory } from "react-icons/md";
 import { formatINR } from "@/utils/price";
-
-interface Suggestion {
-  product_code: string;
-  name: string;
-  price: number;
-  image?: string;
-}
+import { productPath } from "@/utils/slug";
+import { useSearchSuggestions } from "./useSearchSuggestions";
 
 /**
  * Full-screen mobile search. Opened from the header search icon; auto-focuses the
- * input, shows live product suggestions (same query as the desktop SearchBar),
- * and locks background scroll while open. Portalled to <body> so it sits above the
- * fixed header and any transformed ancestors.
+ * input, shows live product + category suggestions (same source as the desktop
+ * SearchBar), and locks background scroll while open. Portalled to <body> so it
+ * sits above the fixed header and any transformed ancestors.
  */
 export default function MobileSearchOverlay({
   open,
@@ -29,46 +23,13 @@ export default function MobileSearchOverlay({
   onClose: () => void;
 }) {
   const router = useRouter();
-  const supabase = useMemo(() => createClient(), []);
   const [q, setQ] = useState("");
-  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
-  const [loading, setLoading] = useState(false);
   const [mounted, setMounted] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const { products, categories, loading } = useSearchSuggestions(q, open, 8);
+  const hasResults = products.length > 0 || categories.length > 0;
 
   useEffect(() => setMounted(true), []);
-
-  // Debounced suggestion fetch (min 2 chars) — only while open.
-  useEffect(() => {
-    if (!open) return;
-    const term = q.trim();
-    if (term.length < 2) {
-      setSuggestions([]);
-      setLoading(false);
-      return;
-    }
-    const escaped = term.replace(/[%,]/g, "");
-    setLoading(true);
-    const t = setTimeout(async () => {
-      const { data } = await supabase
-        .from("products")
-        .select("product_code, name, discounted_price, original_price, images")
-        .eq("is_published", true)
-        .eq("status", "published")
-        .ilike("name", `%${escaped}%`)
-        .limit(8);
-      setSuggestions(
-        (data ?? []).map((p: any) => ({
-          product_code: p.product_code,
-          name: p.name,
-          price: p.discounted_price ?? p.original_price ?? 0,
-          image: p.images?.[0]?.url,
-        })),
-      );
-      setLoading(false);
-    }, 200);
-    return () => clearTimeout(t);
-  }, [q, supabase, open]);
 
   // Auto-focus + scroll lock while open; reset when it closes.
   useEffect(() => {
@@ -81,7 +42,6 @@ export default function MobileSearchOverlay({
       };
     }
     setQ("");
-    setSuggestions([]);
   }, [open]);
 
   const submit = (e?: React.FormEvent) => {
@@ -142,12 +102,33 @@ export default function MobileSearchOverlay({
           <p className="text-center text-muted font-jost text-sm py-12 px-8">
             Type at least 2 letters to search our collection.
           </p>
-        ) : suggestions.length > 0 ? (
+        ) : hasResults ? (
           <>
-            {suggestions.map((s) => (
+            {/* Category matches */}
+            {categories.map((c) => (
+              <Link
+                key={c.id}
+                href={`/collections?category=${c.id}`}
+                onClick={onClose}
+                className="flex items-center gap-3 px-4 py-3 border-b border-border/40 active:bg-[#FAF7F2] transition-colors"
+              >
+                <span className="flex w-11 h-14 items-center justify-center rounded-md bg-[#eee0d6]/60 shrink-0">
+                  <MdOutlineCategory className="text-xl text-[#4c623d]" />
+                </span>
+                <span className="flex-1 min-w-0 truncate font-jost text-sm text-[#2C3829]">
+                  {c.name}
+                </span>
+                <span className="font-jost text-[11px] uppercase tracking-wide text-[#2C3829]/50 shrink-0">
+                  Category
+                </span>
+              </Link>
+            ))}
+
+            {/* Product matches */}
+            {products.map((s) => (
               <Link
                 key={s.product_code}
-                href={`/collections/${s.product_code}`}
+                href={productPath(s.product_code, s.categorySlug)}
                 onClick={onClose}
                 className="flex items-center gap-3 px-4 py-3 border-b border-border/40 active:bg-[#FAF7F2] transition-colors"
               >

@@ -23,7 +23,7 @@ export function orderSubtotal(items: OrderItem[]): number {
  * subtotal line only when there is more than one item (a single Buy Now already
  * shows its own price).
  */
-export function buildOrderMessage(items: OrderItem[]): string {
+export function buildOrderMessage(items: OrderItem[], orderNumber?: string): string {
   const lines = items.map(
     (i) =>
       `• ${i.name} (Code: ${i.code}) - Size ${i.size}, Qty ${i.quantity} - ${rupees(
@@ -37,14 +37,18 @@ export function buildOrderMessage(items: OrderItem[]): string {
     parts.push("", `Subtotal: ${rupees(orderSubtotal(items))}`);
   }
 
+  if (orderNumber) {
+    parts.push("", `Order Ref: ${orderNumber}`);
+  }
+
   parts.push("", "Please confirm availability & payment. Thank you!");
   return parts.join("\n");
 }
 
 /** wa.me link with the order message pre-filled (to the business number). */
-export function orderHref(items: OrderItem[]): string {
+export function orderHref(items: OrderItem[], orderNumber?: string): string {
   return `https://wa.me/${WHATSAPP_ORDER_NUMBER}?text=${encodeURIComponent(
-    buildOrderMessage(items),
+    buildOrderMessage(items, orderNumber),
   )}`;
 }
 

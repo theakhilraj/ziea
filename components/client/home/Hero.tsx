@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { MdChevronLeft, MdChevronRight } from "react-icons/md";
 import SmartImage from "../../ui/SmartImage";
 import type { HeroSlide } from "@/utils/branding";
 
@@ -40,6 +41,11 @@ export default function Hero({ slides: brandingSlides }: { slides?: HeroSlide[] 
       if (interval) clearInterval(interval);
     };
   }, [activeSlides.length]);
+
+  const goPrev = () =>
+    setCurrentImageIndex((p) => (p - 1 + activeSlides.length) % activeSlides.length);
+  const goNext = () =>
+    setCurrentImageIndex((p) => (p + 1) % activeSlides.length);
 
   const slideIndex = activeSlides.length ? currentImageIndex % activeSlides.length : 0;
   const currentSlide = activeSlides[slideIndex];
@@ -85,6 +91,30 @@ export default function Hero({ slides: brandingSlides }: { slides?: HeroSlide[] 
         {/* Faint bottom gradient purely so the slide dots stay legible on any image */}
         <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/25 to-transparent pointer-events-none" />
       </div>
+
+      {/* Tap/click zones: left half = previous, right half = next. Sit below the
+          dots (z-10 < z-20) so the dots stay independently clickable. On desktop a
+          subtle chevron fades in on hover; on mobile they're invisible tap targets. */}
+      {activeSlides.length > 1 && (
+        <>
+          <button
+            type="button"
+            onClick={goPrev}
+            aria-label="Previous slide"
+            className="group absolute left-0 top-0 z-10 h-full w-1/2 flex items-center justify-start px-3 md:px-6 focus:outline-none"
+          >
+            <MdChevronLeft className="text-white/0 md:group-hover:text-white/80 text-4xl drop-shadow transition-colors duration-200" />
+          </button>
+          <button
+            type="button"
+            onClick={goNext}
+            aria-label="Next slide"
+            className="group absolute right-0 top-0 z-10 h-full w-1/2 flex items-center justify-end px-3 md:px-6 focus:outline-none"
+          >
+            <MdChevronRight className="text-white/0 md:group-hover:text-white/80 text-4xl drop-shadow transition-colors duration-200" />
+          </button>
+        </>
+      )}
 
       {/* Slide navigation dots */}
       {activeSlides.length > 1 && (

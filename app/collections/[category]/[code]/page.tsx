@@ -1,27 +1,36 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
-import Header from '../../../components/client/layout/Header';
-import ProductGallery from '../../../components/client/product/ProductGallery';
-import ProductActions from '../../../components/client/product/ProductActions';
-import ProductInfo from '../../../components/server/product/ProductInfo';
-import ProductDetails from '../../../components/server/product/ProductDetails';
-import RelatedProducts from '../../../components/server/product/RelatedProducts';
-import ProductViewTracker from '../../../components/client/product/ProductViewTracker';
-import Footer from '../../../components/server/layout/Footer';
+import { MdInfoOutline } from 'react-icons/md';
+import { notFound, permanentRedirect } from 'next/navigation';
+import Header from '@/components/client/layout/Header';
+import ProductGallery from '@/components/client/product/ProductGallery';
+import ProductActions from '@/components/client/product/ProductActions';
+import ProductInfo from '@/components/server/product/ProductInfo';
+import ProductDetails from '@/components/server/product/ProductDetails';
+import RelatedProducts from '@/components/server/product/RelatedProducts';
+import ProductViewTracker from '@/components/client/product/ProductViewTracker';
+import Footer from '@/components/server/layout/Footer';
 import { getProductByCode, getAllPublishedSlugs } from '@/utils/products';
-import { getCategories } from '@/utils/categories';
+import { getCategories, slugForCategoryId } from '@/utils/categories';
+import { productPath } from '@/utils/slug';
 import { resolvePrice } from '@/utils/price';
 import { SITE_NAME, absoluteUrl } from '@/utils/site';
 
 interface PageProps {
-  params: Promise<{ slug: string }>;
+  params: Promise<{ category: string; code: string }>;
 }
 
-// Prerender every published product; unknown slugs still render on-demand.
+// Prerender every published product at its canonical /collections/{category}/{code}
+// path; unknown params still render on-demand.
 export async function generateStaticParams() {
-  const slugs = await getAllPublishedSlugs();
-  return slugs.map((s) => ({ slug: s.code }));
+  const [slugs, categories] = await Promise.all([
+    getAllPublishedSlugs(),
+    getCategories(),
+  ]);
+  return slugs.map((s) => ({
+    category: slugForCategoryId(categories, s.categoryId),
+    code: s.code,
+  }));
 }
 export const dynamicParams = true;
 
@@ -34,14 +43,16 @@ function toMetaDescription(html: string | null): string {
 
 export async function generateMetadata(props: PageProps): Promise<Metadata> {
   const params = await props.params;
-  const product = await getProductByCode(params.slug);
+  const product = await getProductByCode(params.code);
 
   if (!product) {
     return { title: 'Product Not Found' };
   }
 
+  const categories = await getCategories();
+  const categorySlug = slugForCategoryId(categories, product.category_id);
   const description = toMetaDescription(product.description);
-  const canonical = `/collections/${product.product_code}`;
+  const canonical = productPath(product.product_code, categorySlug);
   const image = product.images?.[0]?.url;
 
   return {
@@ -66,20 +77,24 @@ export async function generateMetadata(props: PageProps): Promise<Metadata> {
 
 export default async function ProductDetailPage(props: PageProps) {
   const params = await props.params;
-  const product = await getProductByCode(params.slug);
+  const product = await getProductByCode(params.code);
 
   if (!product) notFound();
 
-  // Category name for the breadcrumb — resolved from the cached category list
-  // (no extra Supabase round-trip).
-  let categoryName = 'Collections';
-  if (product.category_id) {
-    const categories = await getCategories();
-    const match = categories.find((c) => c.id === product.category_id);
-    if (match?.name) categoryName = match.name;
+  // Resolve the canonical category segment. If the URL's segment doesn't match
+  // (old flat link, stale/renamed category, or a hand-typed wrong slug),
+  // 308-redirect to the canonical /collections/{category}/{code}.
+  const categories = await getCategories();
+  const categorySlug = slugForCategoryId(categories, product.category_id);
+  if (params.category !== categorySlug) {
+    permanentRedirect(productPath(product.product_code, categorySlug));
   }
 
+  const categoryName =
+    categories.find((c) => c.id === product.category_id)?.name ?? 'Collections';
+
   const { price, original } = resolvePrice(product.original_price, product.discounted_price);
+  const canonical = productPath(product.product_code, categorySlug);
 
   // Product structured data (rich results: price, availability, SKU).
   const priceValue = Number(product.discounted_price ?? product.original_price ?? 0);
@@ -94,7 +109,7 @@ export default async function ProductDetailPage(props: PageProps) {
     brand: { '@type': 'Brand', name: SITE_NAME },
     offers: {
       '@type': 'Offer',
-      url: absoluteUrl(`/collections/${product.product_code}`),
+      url: absoluteUrl(canonical),
       priceCurrency: 'INR',
       price: priceValue,
       availability: inStock
@@ -131,6 +146,11 @@ export default async function ProductDetailPage(props: PageProps) {
           {/* Left Column: Gallery (sticky on desktop while the right column scrolls) */}
           <div className="w-full md:sticky md:top-24 md:self-start">
             <ProductGallery images={product.images} />
+            {/* Colour disclaimer — screens/lighting can shift how the fabric reads. */}
+            <p className="mt-3 flex items-start gap-1.5 font-jost text-[12px] md:text-[13px] text-[#5c5349]">
+              <MdInfoOutline className="mt-[2px] text-[15px] shrink-0 text-[#5c5349]/70" />
+              <span>Actual product colour may differ slightly from the images shown.</span>
+            </p>
           </div>
 
           {/* Right Column: Info & Actions */}

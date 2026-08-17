@@ -7,6 +7,7 @@ import { MdFavorite, MdOutlineFavoriteBorder, MdOutlineLocalShipping } from "rea
 import type { ProductCardProps } from "@/types/product";
 import { getBadgeColor } from "@/utils/badge";
 import { deliveryByLabel } from "@/utils/price";
+import { productPath } from "@/utils/slug";
 import { Button } from "../../ui/Button";
 import SmartImage from "../../ui/SmartImage";
 import { addToCart } from "@/app/actions/cart";
@@ -19,6 +20,7 @@ const WISHLIST_RED = "#E63946";
 export default function ProductCard({
   id,
   productCode,
+  categorySlug,
   title,
   originalPrice,
   discountedPrice,
@@ -66,7 +68,7 @@ export default function ProductCard({
 
   return (
     <Link
-      href={`/collections/${productCode}`}
+      href={productPath(productCode, categorySlug)}
       className="flex flex-col space-y-4 group"
     >
       {/* Product Image */}
