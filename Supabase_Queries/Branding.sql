@@ -35,5 +35,5 @@ END $$;
 
 -- Insert defaults if not exist
 INSERT INTO public.branding_assets (section_name)
-VALUES ('Home Page'), ('About Us'), ('Contact Us'), ('Auth Section')
+VALUES ('Home Page'), ('About Us'), ('Contact Us'), ('Auth Section'), ('Customisation Studio')
 ON CONFLICT (section_name) DO NOTHING;

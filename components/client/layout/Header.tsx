@@ -232,7 +232,7 @@ export default function Header() {
     { icon: <MdOutlineInfo className="text-2xl" />, label: "About Us", href: "/about-us" },
     { icon: <MdOutlineMail className="text-2xl" />, label: "Contact Us", href: "/contact-us" },
     { icon: <MdOutlineInventory2 className="text-2xl" />, label: "Bulk Orders", href: "/contact-us?type=collaboration" },
-    { icon: <MdOutlineDesignServices className="text-2xl" />, label: "Customization Studio", href: "/contact-us?type=personal" },
+    { icon: <MdOutlineDesignServices className="text-2xl" />, label: "Customization Studio", href: "/customisation" },
   ];
 
   return (
@@ -256,7 +256,7 @@ export default function Header() {
             <Link href="/about-us" className="hover:text-primary transition-colors whitespace-nowrap">ABOUT US</Link>
             <Link href="/contact-us" className="hover:text-primary transition-colors whitespace-nowrap">CONTACT US</Link>
             <Link href="/contact-us?type=collaboration" className="hover:text-primary transition-colors whitespace-nowrap">BULK ORDERS</Link>
-            <Link href="/contact-us?type=personal" className="hover:text-primary transition-colors whitespace-nowrap">CUSTOMIZATION STUDIO</Link>
+            <Link href="/customisation" className="hover:text-primary transition-colors whitespace-nowrap">CUSTOMIZATION STUDIO</Link>
           </nav>
 
           {/* Right: icons + account */}

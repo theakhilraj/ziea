@@ -261,6 +261,7 @@
         <tr><td>Product detail</td><td><code>app/collections/[slug]/page.tsx</code></td><td><code>products</code> + related</td><td><span class="tag stat">Prerendered</span> via <code>generateStaticParams</code></td></tr>
         <tr><td>About</td><td><code>app/about-us/page.tsx</code></td><td><code>branding_assets</code> (About)</td><td><span class="tag stat">Static / ISR</span></td></tr>
         <tr><td>Contact</td><td><code>app/contact-us/page.tsx</code></td><td>none (client form)</td><td><span class="tag stat">Static</span></td></tr>
+        <tr><td>Customisation Studio</td><td><code>app/customisation/page.tsx</code></td><td>none (static content + <code>wa.me</code> CTAs)</td><td><span class="tag stat">Static</span></td></tr>
         <tr><td>Login / Signup</td><td><code>app/login</code>, <code>app/signup</code></td><td><code>branding_assets</code> (Auth)</td><td><span class="tag stat">Static / ISR</span></td></tr>
         <tr><td>Cart</td><td><code>app/cart/page.tsx</code></td><td><code>cart_items</code> ⋈ <code>products</code></td><td><span class="tag act">Dynamic (ƒ)</span> · <code>noindex</code></td></tr>
         <tr><td>Wishlist</td><td><code>app/wishlist/page.tsx</code></td><td><code>wishlist_items</code> ⋈ <code>products</code></td><td><span class="tag act">Dynamic (ƒ)</span> · <code>noindex</code></td></tr>
@@ -449,11 +450,14 @@
         <div class="card" style="border-left:4px solid var(--sage)"><h3 style="margin-top:0">Product Detail</h3><p>Gallery, info, <code>Buy&nbsp;Now</code> + <code>Add&nbsp;to&nbsp;Cart</code> actions, related products, and a <code>ViewTracker</code> that fires <code>incrementProductView</code>. Prerendered per <code>product_code</code>; carries Product JSON-LD.</p></div>
         <div class="card" style="border-left:4px solid var(--sage)"><h3 style="margin-top:0">About Us</h3><p>Sticky editorial layout — hero, narrative, craftsmanship carousel, philosophy — all imagery driven by the <code>branding_assets</code> "About Us" row so it's editable without a deploy.</p></div>
         <div class="card" style="border-left:4px solid var(--sage)"><h3 style="margin-top:0">Contact Us</h3><p>A client form (type = business / personal / collaboration) that inserts directly into <code>contact_messages</code> and logs an <code>activity_logs</code> entry. Surfaces in the admin Enquiries inbox in real time.</p></div>
+        <div class="card" style="border-left:4px solid var(--sage)"><h3 style="margin-top:0">Customisation Studio</h3><p>A static, mobile-responsive landing page at <code>/customisation</code> — hero + trust badges, three "experience" cards (Consultation / Inspiration / Customise ZIEA), a 6-step process timeline, an editorial testimonial and a WhatsApp help CTA. Built from server components under <code>components/server/customisation/</code>, reusing <code>Header</code>/<code>Footer</code>/<code>Button</code>. Every journey CTA is <code>wa.me</code> click-to-chat with a contextual pre-filled message; the hero button anchor-scrolls to the experience cards. Hero &amp; testimonial imagery are branded placeholders with one-line swap points.</p></div>
         <div class="card" style="border-left:4px solid var(--terra)"><h3 style="margin-top:0">Wishlist</h3><p>Dynamic page joining <code>wishlist_items</code> ⋈ <code>products</code>. Optimistic remove / "move to cart"; badge count driven by the <code>ziea:counts-changed</code> window event.</p></div>
         <div class="card" style="border-left:4px solid var(--terra)"><h3 style="margin-top:0">Shopping Cart</h3><p>Dynamic page joining <code>cart_items</code> ⋈ <code>products</code>. Optimistic quantity stepper; <code>CartCheckoutButton</code> assembles a WhatsApp message and records each line as an order.</p></div>
       </div>
 
       <div class="callout tip"><div class="ic">🔑</div><div><b>The <code>ziea:counts-changed</code> event bus.</b> Any add/remove dispatches a lightweight window event; the header's cart &amp; wishlist badges and the <code>WishlistProvider</code> all listen and re-fetch. No global state library — just a DOM event keeping every corner of the UI in sync.</div></div>
+
+      <div class="callout info"><div class="ic">💡</div><div><b>Entry point moved.</b> The header nav "Customization Studio" link (desktop &amp; mobile) now routes to the new static <code>/customisation</code> landing page instead of <code>/contact-us?type=personal</code>. The contact form and its <code>personal</code> tab are unchanged and still reachable directly.</div></div>
     </section>
 
     <!-- ===================== 9 · WHATSAPP ===================== -->
@@ -603,7 +607,7 @@ Please confirm availability &amp; payment. Thank you!</pre>
       <h3>Core UI components</h3>
       <table>
         <tr><th>Component</th><th>Role</th></tr>
-        <tr><td><code>Button</code></td><td>Variants: <code>primary</code> (terracotta pill), <code>pill</code>, <code>icon</code>, <code>ghost</code>, <code>auth-primary</code> (dark full-width), <code>auth-social</code></td></tr>
+        <tr><td><code>Button</code></td><td>Variants: <code>primary</code> (terracotta pill), <code>pill</code>, <code>icon</code>, <code>ghost</code>, <code>auth-primary</code> (dark full-width), <code>auth-social</code>, <code>outline</code> (forest outline). <code>buttonBase</code>/<code>buttonVariants</code> are exported so link CTAs (e.g. the Customisation Studio <code>wa.me</code> anchors) reuse identical styling without a <code>&lt;button&gt;</code></td></tr>
         <tr><td><code>SmartImage</code></td><td><code>next/image</code> wrapper adding focal-point crop (<code>cropX/cropY/zoom</code>) + LCP <code>preload</code>/<code>fetchPriority</code> — the reason CLS is 0</td></tr>
         <tr><td><code>ProductCard</code></td><td>Server-friendly card; wishlist heart via client context; optimistic add-to-cart</td></tr>
         <tr><td><code>FiltersPanel</code></td><td>Filter side-sheet portalled to <code>&lt;body&gt;</code> to escape transformed ancestors; locks background scroll</td></tr>

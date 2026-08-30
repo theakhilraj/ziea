@@ -30,11 +30,16 @@ export interface AuthBranding {
   topLeft: BrandImage | null;
   bottomRight: BrandImage | null;
 }
+export interface CustomisationBranding {
+  heroDesktop: BrandImage | null;
+  heroMobile: BrandImage | null;
+}
 
 export const SECTION = {
   home: "Home Page",
   about: "About Us",
   auth: "Auth Section",
+  customisation: "Customisation Studio",
 } as const;
 
 // ── Editor schema (drives the section-aware admin editor) ─────────────────────
@@ -67,6 +72,13 @@ export const BRANDING_SCHEMA: Record<string, SectionSchema> = {
     slots: [
       { key: "topLeft", label: "Top-Left Card", kind: "single", aspect: "3/4", folder: "branding/auth" },
       { key: "bottomRight", label: "Bottom-Right Card", kind: "single", aspect: "3/4", folder: "branding/auth" },
+    ],
+  },
+  [SECTION.customisation]: {
+    kind: "slots",
+    slots: [
+      { key: "heroDesktop", label: "Hero Background (Desktop)", kind: "single", aspect: "16/9", folder: "branding/customisation", hint: "Wide background behind the hero on desktop." },
+      { key: "heroMobile", label: "Hero Background (Mobile)", kind: "single", aspect: "9/16", folder: "branding/customisation", hint: "Tall background behind the hero on mobile (full-screen)." },
     ],
   },
 };
@@ -116,6 +128,7 @@ export interface Branding {
   home: HomeBranding;
   about: AboutBranding;
   auth: AuthBranding;
+  customisation: CustomisationBranding;
 }
 
 /** Parse a raw `branding_assets` row-map into the typed Branding shape. */
@@ -123,6 +136,7 @@ export function parseBranding(bySection: Map<string, Record<string, unknown>>): 
   const home = bySection.get(SECTION.home) ?? {};
   const about = bySection.get(SECTION.about) ?? {};
   const auth = bySection.get(SECTION.auth) ?? {};
+  const customisation = bySection.get(SECTION.customisation) ?? {};
   return {
     home: {
       heroSlides: Array.isArray(home.heroSlides) ? home.heroSlides.map(toHeroSlide) : [],
@@ -136,6 +150,10 @@ export function parseBranding(bySection: Map<string, Record<string, unknown>>): 
     auth: {
       topLeft: toBrandImage(auth.topLeft),
       bottomRight: toBrandImage(auth.bottomRight),
+    },
+    customisation: {
+      heroDesktop: toBrandImage(customisation.heroDesktop),
+      heroMobile: toBrandImage(customisation.heroMobile),
     },
   };
 }
