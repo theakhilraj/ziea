@@ -199,7 +199,7 @@
           <text x="720" y="72" text-anchor="middle" font-size="13.5" font-weight="800" fill="#A8BC9A">🗄️ Supabase</text>
           <text x="720" y="94" text-anchor="middle" font-size="11" fill="#d8ddd2">Postgres · Auth · Realtime</text>
           <text x="720" y="112" text-anchor="middle" font-size="11" fill="#d8ddd2">Row-Level Security</text>
-          <text x="720" y="130" text-anchor="middle" font-size="11" fill="#d8ddd2">10 core tables</text>
+          <text x="720" y="130" text-anchor="middle" font-size="11" fill="#d8ddd2">13 core tables</text>
           <!-- cdn -->
           <rect x="630" y="176" width="180" height="86" rx="13" fill="#f6ecd8" stroke="#a6690a" stroke-width="1.6"/>
           <text x="720" y="210" text-anchor="middle" font-size="13.5" font-weight="700">🖼️ Hostinger CDN</text>
@@ -262,6 +262,7 @@
         <tr><td>About</td><td><code>app/about-us/page.tsx</code></td><td><code>branding_assets</code> (About)</td><td><span class="tag stat">Static / ISR</span></td></tr>
         <tr><td>Contact</td><td><code>app/contact-us/page.tsx</code></td><td>none (client form)</td><td><span class="tag stat">Static</span></td></tr>
         <tr><td>Customisation Studio</td><td><code>app/customisation/page.tsx</code></td><td>none (static content + <code>wa.me</code> CTAs)</td><td><span class="tag stat">Static</span></td></tr>
+        <tr><td>Consultation booking</td><td><code>app/customisation/consultation/page.tsx</code></td><td><code>consultation_settings</code>, <code>consultation_days_off</code> (via <code>getBookingWindow</code>)</td><td><span class="tag stat">Static / ISR</span></td></tr>
         <tr><td>Login / Signup</td><td><code>app/login</code>, <code>app/signup</code></td><td><code>branding_assets</code> (Auth)</td><td><span class="tag stat">Static / ISR</span></td></tr>
         <tr><td>Cart</td><td><code>app/cart/page.tsx</code></td><td><code>cart_items</code> ⋈ <code>products</code></td><td><span class="tag act">Dynamic (ƒ)</span> · <code>noindex</code></td></tr>
         <tr><td>Wishlist</td><td><code>app/wishlist/page.tsx</code></td><td><code>wishlist_items</code> ⋈ <code>products</code></td><td><span class="tag act">Dynamic (ƒ)</span> · <code>noindex</code></td></tr>
@@ -303,7 +304,7 @@
     <!-- ===================== 4 · DATA MODEL ===================== -->
     <section id="s4">
       <h2><span class="num">4</span> Supabase Data Model</h2>
-      <p class="lead">Ten core tables. Public reads are locked to published rows by Row-Level Security; every per-user table is filtered by <code>user_id</code> both in code and in policy.</p>
+      <p class="lead">Thirteen core tables. Public reads are locked to published rows by Row-Level Security; every per-user table is filtered by <code>user_id</code> both in code and in policy.</p>
 
       <table>
         <tr><th>Table</th><th>Purpose</th><th>Key columns</th></tr>
@@ -317,7 +318,12 @@
         <tr><td><span class="tag db">branding_assets</span></td><td>Editable site imagery</td><td><code>section_name</code> (unique), <code>images</code> (JSONB), <code>updated_at</code></td></tr>
         <tr><td><span class="tag db">users</span></td><td>Profiles + role</td><td><code>id</code> (=<code>auth.users.id</code>), <code>first_name</code>, <code>last_name</code>, <code>email</code>, <code>phone</code>, <code>role</code> (<code>Customer</code>/<code>Admin</code>), <code>last_login_at</code></td></tr>
         <tr><td><span class="tag db">newsletter</span></td><td>Email sign-ups</td><td><code>email</code> (unique)</td></tr>
+        <tr><td><span class="tag db">consultation_settings</span></td><td>Availability config (single row)</td><td><code>work_start</code>, <code>work_end</code>, <code>slot_minutes</code>, <code>timezone</code> (<code>Asia/Kolkata</code>), <code>lead_time_hours</code> (<code>2</code>), <code>max_advance_days</code> (<code>30</code>) — admin-editable</td></tr>
+        <tr><td><span class="tag db">consultation_days_off</span></td><td>Admin blackout dates</td><td><code>day</code> (unique), <code>reason</code></td></tr>
+        <tr><td><span class="tag db">consultations</span></td><td>Designer-consultation bookings</td><td><code>ref</code>, <code>name</code>, <code>email</code>, <code>phone</code>, <code>method</code> (<code>google_meet</code>/<code>whatsapp_video</code>), <code>slot_date</code>, <code>slot_time</code>, <code>slot_minutes</code> (duration snapshot), <code>notes</code>, <code>image_url</code>, <code>image_note</code>, <code>agreed_terms</code>/<code>agreed_at</code>/<code>consent_ip</code>/<code>consent_ua</code> (consent proof), <code>status</code> (<code>confirmed</code>/<code>completed</code>/<code>cancelled</code>), <code>submission_token</code>, <code>created_at</code></td></tr>
       </table>
+
+      <div class="callout tip"><div class="ic">🔑</div><div><b>Instant-book with no separate block table.</b> A confirmed <code>consultations</code> row <em>is</em> the block — availability subtracts already-booked times, and cancelling (<code>status='cancelled'</code>) frees the slot again. Double-booking is prevented by a two-layer guard: a submit-time re-check <em>plus</em> a partial unique index <code>(slot_date, slot_time) WHERE status &lt;&gt; 'cancelled'</code> — a <code>23505</code> unique-violation is the backstop. All slot math runs in IST (<code>Asia/Kolkata</code>) with a 2-hour lead time.</div></div>
 
       <div class="callout info"><div class="ic">💡</div><div><b>Two image JSON shapes coexist.</b> Product/category images store <code>{ url, is_highlight, crop_x, crop_y, zoom }</code> (snake_case); branding images store <code>{ url, cropX, cropY, zoom }</code> (camelCase). Both encode a focal-point crop so the same asset can be reframed per surface without re-uploading.</div></div>
 
@@ -339,7 +345,12 @@
         <tr><td><code>incrementProductView</code></td><td><code>actions/views.ts</code></td><td>RPC <code>increment_product_view_count</code></td><td><code>(productId)</code></td><td>anonymous OK</td></tr>
         <tr><td><code>subscribeNewsletter</code></td><td><code>actions/newsletter.ts</code></td><td><span class="tag db">newsletter</span></td><td><code>formData.email</code></td><td>public</td></tr>
         <tr><td><code>revalidateStorefront</code></td><td><code>actions/revalidate.ts</code></td><td>— (cache)</td><td><code>('products'\|'categories'\|'branding')</code></td><td>—</td></tr>
+        <tr><td><code>getAvailableSlotsAction</code></td><td><code>actions/consultation.ts</code></td><td>— (reads availability, uncached)</td><td><code>(dateISO)</code> → <code>"HH:MM"[]</code></td><td>public</td></tr>
+        <tr><td><code>submitConsultation</code></td><td><code>actions/consultation.ts</code></td><td><span class="tag db">consultations</span></td><td><code>(booking payload)</code> → <code>{ref}</code></td><td>public · honeypot + slot re-check + server-stamped consent/IP/UA + admin-only Resend email</td></tr>
+        <tr><td><code>updateConsultationSettings</code> / <code>addDayOff</code> / <code>removeDayOff</code> / <code>updateConsultationStatus</code></td><td><code>actions/consultation-admin.ts</code></td><td><span class="tag db">consultation_settings</span> <span class="tag db">consultation_days_off</span> <span class="tag db">consultations</span></td><td>settings / day-offs / booking status</td><td>admin (<code>isAdmin()</code>→<code>getAdminClaims</code>) + <code>revalidatePath</code></td></tr>
       </table>
+
+      <div class="callout tip"><div class="ic">🔑</div><div><b>Availability lives in <code>utils/consultation.ts</code>.</b> <code>getAvailableSlots</code> generates candidate slots from settings, then excludes those booked (by <em>interval overlap</em>), day-offs, past-today (IST + lead time) and beyond-window. It reads <b>fresh</b> (uncached) so a new booking removes the slot immediately. The booking <code>ref</code> is derived purely from the <code>submission_token</code> — idempotent, so a retry returns the same ref.</div></div>
 
       <h3>Example — the cart upsert (deferred logging)</h3>
       <pre><span class="c">// app/actions/cart.ts — identity via local JWT, logging deferred past the response</span>
@@ -450,7 +461,8 @@
         <div class="card" style="border-left:4px solid var(--sage)"><h3 style="margin-top:0">Product Detail</h3><p>Gallery, info, <code>Buy&nbsp;Now</code> + <code>Add&nbsp;to&nbsp;Cart</code> actions, related products, and a <code>ViewTracker</code> that fires <code>incrementProductView</code>. Prerendered per <code>product_code</code>; carries Product JSON-LD.</p></div>
         <div class="card" style="border-left:4px solid var(--sage)"><h3 style="margin-top:0">About Us</h3><p>Sticky editorial layout — hero, narrative, craftsmanship carousel, philosophy — all imagery driven by the <code>branding_assets</code> "About Us" row so it's editable without a deploy.</p></div>
         <div class="card" style="border-left:4px solid var(--sage)"><h3 style="margin-top:0">Contact Us</h3><p>A client form (type = business / personal / collaboration) that inserts directly into <code>contact_messages</code> and logs an <code>activity_logs</code> entry. Surfaces in the admin Enquiries inbox in real time.</p></div>
-        <div class="card" style="border-left:4px solid var(--sage)"><h3 style="margin-top:0">Customisation Studio</h3><p>A static, mobile-responsive landing page at <code>/customisation</code> — hero + trust badges, three "experience" cards (Consultation / Inspiration / Customise ZIEA), a 6-step process timeline, an editorial testimonial and a WhatsApp help CTA. Built from server components under <code>components/server/customisation/</code>, reusing <code>Header</code>/<code>Footer</code>/<code>Button</code>. Every journey CTA is <code>wa.me</code> click-to-chat with a contextual pre-filled message; the hero button anchor-scrolls to the experience cards. Hero &amp; testimonial imagery are branded placeholders with one-line swap points.</p></div>
+        <div class="card" style="border-left:4px solid var(--sage)"><h3 style="margin-top:0">Customisation Studio</h3><p>A static, mobile-responsive landing page at <code>/customisation</code> — hero + trust badges, three "experience" cards (Consultation / Inspiration / Customise ZIEA), a 6-step process timeline, an editorial testimonial and a WhatsApp help CTA. Built from server components under <code>components/server/customisation/</code>, reusing <code>Header</code>/<code>Footer</code>/<code>Button</code>. Every journey CTA is <code>wa.me</code> click-to-chat with a contextual pre-filled message; the hero button anchor-scrolls to the experience cards. Hero &amp; testimonial imagery are branded placeholders with one-line swap points. The "Designer Consultation" experience card now links internally to <code>/customisation/consultation</code>.</p></div>
+        <div class="card" style="border-left:4px solid var(--sage)"><h3 style="margin-top:0">Designer Consultation</h3><p>The instant-book scheduler at <code>/customisation/consultation</code> — a <code>Calendar</code> + <code>TimeSlots</code> picker (IST), customer details, a Google-Meet / WhatsApp-Video method choice, an optional reference-image upload, and a Terms/Privacy consent checkbox, then one-tap booking. The client <code>ConsultationForm</code> calls <code>submitConsultation</code>; the success screen shows the booking <code>ref</code>. Mobile-responsive; ToS/Privacy links open in a new tab.</p></div>
         <div class="card" style="border-left:4px solid var(--terra)"><h3 style="margin-top:0">Wishlist</h3><p>Dynamic page joining <code>wishlist_items</code> ⋈ <code>products</code>. Optimistic remove / "move to cart"; badge count driven by the <code>ziea:counts-changed</code> window event.</p></div>
         <div class="card" style="border-left:4px solid var(--terra)"><h3 style="margin-top:0">Shopping Cart</h3><p>Dynamic page joining <code>cart_items</code> ⋈ <code>products</code>. Optimistic quantity stepper; <code>CartCheckoutButton</code> assembles a WhatsApp message and records each line as an order.</p></div>
       </div>
@@ -484,13 +496,13 @@ Please confirm availability &amp; payment. Thank you!</pre>
     <!-- ===================== 10 · ADMIN ===================== -->
     <section id="s10">
       <h2><span class="num">10</span> Admin Console</h2>
-      <p class="lead">A fully dynamic, role-gated console. <code>app/admin/layout.tsx</code> calls <code>getAdminClaims()</code>; anyone without a session is bounced to login, and anyone whose <code>users.role ≠ 'Admin'</code> is sent home. Three Realtime providers keep the sidebar badges live.</p>
+      <p class="lead">A fully dynamic, role-gated console. <code>app/admin/layout.tsx</code> calls <code>getAdminClaims()</code>; anyone without a session is bounced to login, and anyone whose <code>users.role ≠ 'Admin'</code> is sent home. Four Realtime providers keep the sidebar badges live.</p>
 
       <h3>Sidebar (in order)</h3>
       <p>
         <span class="pill">📊 Dashboard</span><span class="pill">📈 Analytics</span><span class="pill">📦 Products</span>
         <span class="pill">🗂️ Categories</span><span class="pill">👥 Customers</span><span class="pill">🎨 Branding</span>
-        <span class="pill">🕘 Activity</span><span class="pill">✉️ Enquiries <span class="tag act">badge</span></span><span class="pill">🛍️ Orders <span class="tag act">badge</span></span>
+        <span class="pill">🕘 Activity</span><span class="pill">✉️ Enquiries <span class="tag act">badge</span></span><span class="pill">🛍️ Orders <span class="tag act">badge</span></span><span class="pill">📅 Consultations <span class="tag act">badge</span></span>
       </p>
 
       <table>
@@ -504,9 +516,10 @@ Please confirm availability &amp; payment. Thank you!</pre>
         <tr><td><b>Activity</b></td><td>Filterable behaviour feed (search, time window, type chips), 20/page</td><td><code>activity_logs</code></td></tr>
         <tr><td><b>Enquiries</b></td><td>Read/Unread tabs, unread badge, checkbox mark-read (<code>is_read</code>+<code>read_at</code>), type badges, 20/page</td><td><code>contact_messages</code></td></tr>
         <tr><td><b>Orders</b></td><td>Status tabs (Initiated/Confirmed/Fulfilled/Cancelled), per-status counts, status dropdown, 20/page</td><td><code>orders</code></td></tr>
+        <tr><td><b>Consultations</b></td><td><b>Availability</b> tab (edit hours / slot / lead / window + a day-off calendar that warns before blocking a day with existing bookings) and <b>Bookings</b> tab (status filter, pagination 20/page, detail with WhatsApp click-to-chat + reference image, status changes; cancelling frees the slot)</td><td><code>consultation_settings</code>, <code>consultation_days_off</code>, <code>consultations</code></td></tr>
       </table>
 
-      <div class="callout info"><div class="ic">💡</div><div><b>Live badges via Supabase Realtime.</b> <code>OrdersProvider</code>, <code>EnquiriesProvider</code> and <code>ActivityNotificationsProvider</code> subscribe to channels <code>admin-orders</code>, <code>admin-enquiries</code>, <code>admin-activity</code>. A new order or message updates the sidebar count and the notification bell without a refresh.</div></div>
+      <div class="callout info"><div class="ic">💡</div><div><b>Live badges via Supabase Realtime.</b> <code>OrdersProvider</code>, <code>EnquiriesProvider</code>, <code>ActivityNotificationsProvider</code> and <code>ConsultationsProvider</code> subscribe to channels <code>admin-orders</code>, <code>admin-enquiries</code>, <code>admin-activity</code> and <code>admin-consultations</code>. A new order, message or booking updates the sidebar count and the notification bell without a refresh.</div></div>
     </section>
 
     <!-- ===================== 11 · STORAGE ===================== -->
@@ -516,7 +529,8 @@ Please confirm availability &amp; payment. Thank you!</pre>
 
       <table>
         <tr><th>Concern</th><th>Detail</th></tr>
-        <tr><td>Upload endpoint</td><td><code>app/api/upload/route.ts</code> — <code>getAdminClaims()</code> gate (non-admin → <code>401</code>). Accepts jpeg/png/webp/gif/avif/svg, max 15 MB. Filename = <code>{ts}-{rand}-{slug}.{ext}</code></td></tr>
+        <tr><td>Upload endpoint (admin)</td><td><code>app/api/upload/route.ts</code> — <code>getAdminClaims()</code> gate (non-admin → <code>401</code>). Accepts jpeg/png/webp/gif/avif/svg, max 15 MB. Filename = <code>{ts}-{rand}-{slug}.{ext}</code></td></tr>
+        <tr><td>Upload endpoint (public)</td><td><code>app/api/consultation-upload/route.ts</code> — customer reference images, <b>no admin gate</b> (bookers are anonymous). Hardened: JPG/PNG/WebP only (SVG/GIF/AVIF rejected — SVG is an XSS risk), 5 MB cap, per-IP rate-limit, writes to the fixed <code>cdn/consultations/</code> folder</td></tr>
         <tr><td>Write target</td><td><code>ASSET_UPLOAD_DIR</code> → prod <code>/home/…/ziea.in/public_html/cdn</code>; returns <code>${NEXT_PUBLIC_ASSET_BASE_URL}/{folder}/{file}</code></td></tr>
         <tr><td>Serving</td><td><code>app/cdn/[...path]/route.ts</code> streams files with <code>Cache-Control: public, max-age=31536000, immutable</code> (traversal-guarded)</td></tr>
         <tr><td>Fallback</td><td>A Supabase-Storage code path is kept commented for serverless/read-only-FS hosts (e.g. Vercel)</td></tr>
@@ -529,6 +543,7 @@ Please confirm availability &amp; payment. Thank you!</pre>
         <tr><td>Branding — Home (desktop 16:9, mobile 4:5)</td><td><code>branding/home</code></td></tr>
         <tr><td>Branding — About (hero, mobile slides, craftsmanship, philosophy)</td><td><code>branding/about</code></td></tr>
         <tr><td>Branding — Auth (top-left, bottom-right)</td><td><code>branding/auth</code></td></tr>
+        <tr><td>Consultation reference images (public upload)</td><td><code>consultations</code></td></tr>
       </table>
 
       <div class="callout warn"><div class="ic">⚠️</div><div><b>Filesystem writes need a persistent disk.</b> The <code>writeFile</code> path only works where the FS is writable (Hostinger). On Vercel the FS is read-only, so the commented Supabase-Storage branch must be restored before deploying there. Set <code>ASSET_UPLOAD_DIR</code> and <code>NEXT_PUBLIC_ASSET_BASE_URL</code> in the Hostinger environment.</div></div>
@@ -547,6 +562,7 @@ Please confirm availability &amp; payment. Thank you!</pre>
         <tr><td><code>Newsletter Subscription</code></td><td><code>subscribeNewsletter</code></td><td><code>actions/newsletter.ts</code></td></tr>
         <tr><td><code>Category / Product Added·Updated·Deleted</code></td><td>Admin CRUD</td><td>admin clients</td></tr>
         <tr><td>Enquiry &amp; Order events</td><td>Contact form / order flow</td><td>client inserts</td></tr>
+        <tr><td><code>Consultation Booked</code> / <code>Updated</code></td><td>Consultation submit + admin status actions</td><td><code>actions/consultation.ts</code>, <code>consultation-admin.ts</code></td></tr>
       </table>
 
       <div class="callout info"><div class="ic">💡</div><div><b>Views are counted, not logged.</b> Product views bump a <code>products.view_count</code> counter through an RPC — they are <em>not</em> written to <code>activity_logs</code>. So the analytics "views" number comes from the counter, while the activity feed shows discrete events (logins, cart/wishlist adds, sign-ups, enquiries, orders).</div></div>
@@ -613,7 +629,12 @@ Please confirm availability &amp; payment. Thank you!</pre>
         <tr><td><code>FiltersPanel</code></td><td>Filter side-sheet portalled to <code>&lt;body&gt;</code> to escape transformed ancestors; locks background scroll</td></tr>
         <tr><td><code>SearchBar</code></td><td>Debounced live product suggestions (Supabase <code>ilike</code>, limit 6)</td></tr>
         <tr><td><code>LoadingQuote</code></td><td>Rotating on-brand quotes on the collections loading screen</td></tr>
+        <tr><td><code>Calendar</code></td><td>Timezone-safe month date-picker; disables past / day-offs / beyond-window dates; keyboard-accessible</td></tr>
+        <tr><td><code>TimeSlots</code></td><td>12-hour slot grid for the consultation booker, with loading &amp; empty states</td></tr>
+        <tr><td><code>PageLoader</code></td><td>Reusable full-screen route loading state</td></tr>
       </table>
+
+      <div class="callout info"><div class="ic">💡</div><div><b>Global smooth-scroll.</b> A <code>scroll-behavior: smooth</code> rule (reduced-motion-aware) was added so the hero "Start Your Customisation Journey" anchor glides down to the experience section rather than jumping.</div></div>
 
       <h3>Performance techniques baked in</h3>
       <p>

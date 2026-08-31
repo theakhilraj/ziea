@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/Button';
 import NotificationBell from '@/components/client/admin/NotificationBell';
 import { useEnquiries } from '@/components/client/admin/EnquiriesProvider';
 import { useOrders } from '@/components/client/admin/OrdersProvider';
+import { useConsultations } from '@/components/client/admin/ConsultationsProvider';
 import {
   MdDashboard,
   MdInventory2,
@@ -22,7 +23,8 @@ import {
   MdOutlineBrandingWatermark,
   MdOutlineInsights,
   MdOutlineForum,
-  MdOutlineShoppingBag
+  MdOutlineShoppingBag,
+  MdOutlineEventAvailable
 } from 'react-icons/md';
 
 const AVATAR_COLORS = [
@@ -56,13 +58,16 @@ export default function AdminNavigation({
   const supabase = createClient();
   const { unreadCount: enquiryCount } = useEnquiries();
   const { newCount: orderCount } = useOrders();
+  const { newCount: consultationCount } = useConsultations();
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
   // Identity comes from the server (props) — no getSession()/profile query on
   // mount. We only listen for sign-out to clear the UI.
-  const [user, setUser] = useState<any>(initialUserId ? { id: initialUserId } : null);
-  const [profile, setProfile] = useState<any>(initialProfile);
+  const [user, setUser] = useState<{ id: string } | null>(
+    initialUserId ? { id: initialUserId } : null,
+  );
+  const [profile, setProfile] = useState<AdminNavProfile | null>(initialProfile);
 
   // Lock the page scroll while the mobile drawer is open (no scroll bleed).
   useEffect(() => {
@@ -116,10 +121,17 @@ export default function AdminNavigation({
     { href: "/admin/activity", icon: <MdHistory className="text-xl" />, label: "Activity" },
     { href: "/admin/enquiries", icon: <MdOutlineForum className="text-xl" />, label: "Enquiries" },
     { href: "/admin/orders", icon: <MdOutlineShoppingBag className="text-xl" />, label: "Orders" },
+    { href: "/admin/consultations", icon: <MdOutlineEventAvailable className="text-xl" />, label: "Consultations" },
   ];
 
   const badgeFor = (href: string) =>
-    href === "/admin/enquiries" ? enquiryCount : href === "/admin/orders" ? orderCount : 0;
+    href === "/admin/enquiries"
+      ? enquiryCount
+      : href === "/admin/orders"
+        ? orderCount
+        : href === "/admin/consultations"
+          ? consultationCount
+          : 0;
 
   return (
     <>

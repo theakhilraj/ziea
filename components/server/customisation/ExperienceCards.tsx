@@ -1,16 +1,28 @@
 import Link from "next/link";
 import { MdOutlineSupportAgent, MdOutlineDraw, MdOutlineTune } from "react-icons/md";
 import { buttonBase, buttonVariants } from "@/components/ui/Button";
-import { WA_CONSULTATION, WA_INSPIRATION, WA_CUSTOMISE } from "./links";
+import { WA_INSPIRATION, WA_CUSTOMISE } from "./links";
 
-const CARDS = [
+interface ExperienceCard {
+  icon: typeof MdOutlineSupportAgent;
+  title: string;
+  perfectFor: string;
+  body: string;
+  cta: string;
+  href: string;
+  /** Internal same-tab route vs. external WhatsApp link (new tab). */
+  external: boolean;
+}
+
+const CARDS: ExperienceCard[] = [
   {
     icon: MdOutlineSupportAgent,
     title: "Designer Consultation",
     perfectFor: "I need expert guidance.",
     body: "Book a consultation, discuss ideas, and receive personalised styling guidance from our expert team.",
     cta: "Book Consultation",
-    href: WA_CONSULTATION,
+    href: "/customisation/consultation",
+    external: false,
   },
   {
     icon: MdOutlineDraw,
@@ -19,6 +31,7 @@ const CARDS = [
     body: "Share photos or sketches. Our team reviews your ideas and gets in touch with the next steps.",
     cta: "Share Design",
     href: WA_INSPIRATION,
+    external: true,
   },
   {
     icon: MdOutlineTune,
@@ -27,6 +40,7 @@ const CARDS = [
     body: "Choose a ZIEA design, customise neckline, sleeves or length, and share your exact measurements.",
     cta: "Start Customising",
     href: WA_CUSTOMISE,
+    external: true,
   },
 ];
 
@@ -61,8 +75,9 @@ export default function ExperienceCards() {
             </p>
             <Link
               href={c.href}
-              target="_blank"
-              rel="noopener noreferrer"
+              {...(c.external
+                ? { target: "_blank", rel: "noopener noreferrer" }
+                : {})}
               className={`${buttonBase} ${buttonVariants["auth-primary"]} w-full`}
             >
               {c.cta}

@@ -7,9 +7,8 @@ function wa(text: string): string {
   return `https://wa.me/${WHATSAPP_ORDER_NUMBER}?text=${encodeURIComponent(text)}`;
 }
 
-export const WA_CONSULTATION = wa(
-  "Hi ZIEA, I'd like to book a designer consultation for a custom outfit.",
-);
+// Note: the Designer Consultation card now routes to the internal
+// /customisation/consultation booking flow, so it no longer uses a WhatsApp link.
 export const WA_INSPIRATION = wa(
   "Hi ZIEA, I have a design/inspiration I'd love to share for a custom outfit.",
 );

@@ -19,6 +19,13 @@
 }
 
 @layer base {
+  /* Smooth in-page anchor scrolling (e.g. the hero "Start Your Customisation
+     Journey" → #experience). Disabled when the user prefers reduced motion. */
+  @media (prefers-reduced-motion: no-preference) {
+    html {
+      scroll-behavior: smooth;
+    }
+  }
   body {
     background-color: var(--color-background);
     color: var(--color-text);

@@ -1,4 +1,3 @@
-import Link from "next/link";
 import SmartImage from "@/components/ui/SmartImage";
 import { getBranding } from "@/utils/branding.server";
 import {
@@ -82,13 +81,13 @@ export default async function StudioHero() {
             designers, or customise a ZIEA design to match your style, fit and occasion.
           </p>
 
-          <Link
+          <a
             href="#experience"
             className={`${buttonBase} ${buttonVariants["auth-primary"]} mt-9 w-full gap-2 sm:w-auto sm:px-10`}
           >
             Start Your Customisation Journey
             <MdArrowForward size={18} />
-          </Link>
+          </a>
 
           {/* Trust badges — desktop only (hidden on mobile) */}
           <div className="mt-14 hidden gap-6 border-t border-border pt-8 md:grid md:grid-cols-5">
