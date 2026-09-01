@@ -16,7 +16,7 @@ export function MetricCard({ title, value, subtitle, icon: Icon }: MetricCardPro
         <div className="bg-[#2C3829]/10 p-2.5 sm:p-3 rounded-lg shrink-0">
           <Icon className="text-[#2C3829] text-xl sm:text-2xl" />
         </div>
-        <span className="text-[#2C3829]/60 font-label-sm text-right text-[11px] leading-tight sm:text-sm">{subtitle}</span>
+        <span className="text-[#2C3829]/60 font-label-sm text-right text-[11px] leading-tight sm:text-xs">{subtitle}</span>
       </div>
       <div className="mt-5 sm:mt-8">
         <span className="text-[#2C3829] font-jost font-semibold block text-3xl sm:text-4xl mb-1">{value}</span>

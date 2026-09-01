@@ -9,6 +9,7 @@ import {
   MdOutlineLock,
 } from "react-icons/md";
 import { buttonBase, buttonVariants } from "@/components/ui/Button";
+import ScrollToButton from "@/components/client/customisation/ScrollToButton";
 
 const BADGES = [
   { icon: MdFavoriteBorder, label: "Handcrafted with Love" },
@@ -81,13 +82,13 @@ export default async function StudioHero() {
             designers, or customise a ZIEA design to match your style, fit and occasion.
           </p>
 
-          <a
-            href="#experience"
+          <ScrollToButton
+            targetId="experience"
             className={`${buttonBase} ${buttonVariants["auth-primary"]} mt-9 w-full gap-2 sm:w-auto sm:px-10`}
           >
             Start Your Customisation Journey
             <MdArrowForward size={18} />
-          </a>
+          </ScrollToButton>
 
           {/* Trust badges — desktop only (hidden on mobile) */}
           <div className="mt-14 hidden gap-6 border-t border-border pt-8 md:grid md:grid-cols-5">

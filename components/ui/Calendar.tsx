@@ -8,10 +8,19 @@ export interface CalendarProps {
   value: string | null;
   /** Called with the "YYYY-MM-DD" of a selectable day when the user picks it. */
   onChange: (iso: string) => void;
-  /** Earliest selectable day, "YYYY-MM-DD" (e.g. IST today). */
+  /** Earliest selectable day, "YYYY-MM-DD" (e.g. IST today, or today + lead). */
   minISO: string;
   /** Latest selectable day, "YYYY-MM-DD" (e.g. IST today + window). */
   maxISO: string;
+  /**
+   * IST today as "YYYY-MM-DD", used to draw the "today" ring + set
+   * aria-current="date". OPTIONAL — when omitted it defaults to `minISO`, so
+   * callers where the earliest selectable day IS today (e.g. consultation)
+   * behave exactly as before. Callers with a lead-time gap (e.g. inquiry, where
+   * `minISO` = today + leadDays) pass the REAL today here so the ring lands on
+   * the actual current day rather than the first selectable one.
+   */
+  todayISO?: string;
   /** Day-offs / blackout dates as "YYYY-MM-DD"; rendered disabled. */
   disabledDates?: string[];
   /** Extra classes on the outer wrapper. */
@@ -78,6 +87,7 @@ export function Calendar({
   onChange,
   minISO,
   maxISO,
+  todayISO,
   disabledDates,
   className = "",
 }: CalendarProps) {
@@ -262,7 +272,10 @@ export function Calendar({
           const { d } = parseISO(iso);
           const selectable = isSelectable(iso);
           const selected = value === iso;
-          const isToday = iso === minISO; // minISO is passed as IST today
+          // The "today" ring lands on `todayISO` when provided (a caller with a
+          // lead-time gap), otherwise on `minISO` (the earliest selectable day
+          // is today, e.g. consultation).
+          const isToday = iso === (todayISO ?? minISO);
           const isRoving = iso === rovingISO;
 
           const fullLabel = utcNoon(parseISO(iso)).toLocaleDateString("en-GB", {

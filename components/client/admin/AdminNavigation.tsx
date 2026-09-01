@@ -11,6 +11,7 @@ import NotificationBell from '@/components/client/admin/NotificationBell';
 import { useEnquiries } from '@/components/client/admin/EnquiriesProvider';
 import { useOrders } from '@/components/client/admin/OrdersProvider';
 import { useConsultations } from '@/components/client/admin/ConsultationsProvider';
+import { useDesignInquiries } from '@/components/client/admin/DesignInquiriesProvider';
 import {
   MdDashboard,
   MdInventory2,
@@ -24,7 +25,8 @@ import {
   MdOutlineInsights,
   MdOutlineForum,
   MdOutlineShoppingBag,
-  MdOutlineEventAvailable
+  MdOutlineEventAvailable,
+  MdOutlineDesignServices
 } from 'react-icons/md';
 
 const AVATAR_COLORS = [
@@ -59,6 +61,7 @@ export default function AdminNavigation({
   const { unreadCount: enquiryCount } = useEnquiries();
   const { newCount: orderCount } = useOrders();
   const { newCount: consultationCount } = useConsultations();
+  const { newCount: designInquiryCount } = useDesignInquiries();
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
@@ -78,6 +81,20 @@ export default function AdminNavigation({
       document.body.style.overflow = prev;
     };
   }, [isMenuOpen]);
+
+  // Auto-close the mobile drawer once the viewport reaches desktop. The drawer is
+  // `lg:hidden`, so on a mobile→desktop switch it vanishes visually while its
+  // `isMenuOpen` state (and the body scroll-lock above) would otherwise persist —
+  // leaving the desktop page unscrollable. Runs on mount and on every crossing.
+  useEffect(() => {
+    const desktop = window.matchMedia("(min-width: 1024px)");
+    const sync = () => {
+      if (desktop.matches) setIsMenuOpen(false);
+    };
+    sync();
+    desktop.addEventListener("change", sync);
+    return () => desktop.removeEventListener("change", sync);
+  }, []);
 
   useEffect(() => {
     const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
@@ -118,10 +135,11 @@ export default function AdminNavigation({
     { href: "/admin/categories", icon: <MdCategory className="text-xl" />, label: "Categories" },
     { href: "/admin/customers", icon: <MdGroup className="text-xl" />, label: "Customers" },
     { href: "/admin/branding", icon: <MdOutlineBrandingWatermark className="text-xl" />, label: "Branding" },
-    { href: "/admin/activity", icon: <MdHistory className="text-xl" />, label: "Activity" },
     { href: "/admin/enquiries", icon: <MdOutlineForum className="text-xl" />, label: "Enquiries" },
     { href: "/admin/orders", icon: <MdOutlineShoppingBag className="text-xl" />, label: "Orders" },
     { href: "/admin/consultations", icon: <MdOutlineEventAvailable className="text-xl" />, label: "Consultations" },
+    { href: "/admin/design-inquiries", icon: <MdOutlineDesignServices className="text-xl" />, label: "Design Inquiries" },
+    { href: "/admin/activity", icon: <MdHistory className="text-xl" />, label: "Activity" },
   ];
 
   const badgeFor = (href: string) =>
@@ -131,34 +149,36 @@ export default function AdminNavigation({
         ? orderCount
         : href === "/admin/consultations"
           ? consultationCount
-          : 0;
+          : href === "/admin/design-inquiries"
+            ? designInquiryCount
+            : 0;
 
   return (
     <>
       {/* Desktop Sidebar */}
-      <aside className="fixed inset-y-0 left-0 z-[60] flex-col pt-6 pb-6 lg:pt-6 lg:pb-10 bg-[#2C3829] h-full w-72 shadow-xl hidden lg:flex">
-        <div className="px-6 lg:px-10 mb-6 flex flex-col items-center">
-          <div className="w-full flex justify-center mb-4">
+      <aside className="fixed inset-y-0 left-0 z-[60] flex-col pt-5 pb-5 lg:pt-5 lg:pb-6 bg-[#2C3829] h-full w-72 shadow-xl hidden lg:flex">
+        <div className="px-6 lg:px-10 mb-4 flex flex-col items-center">
+          <div className="w-full flex justify-center mb-2">
             <Image
               src="/Ziea_Splash.png"
               alt="ZIEA Logo"
               width={80}
               height={80}
-              className="w-20 h-auto object-contain"
+              className="w-16 h-auto object-contain"
               priority
             />
           </div>
-          <p className="font-jost text-[#F5F0E8] font-medium tracking-wider">Admin Portal</p>
+          <p className="font-jost text-sm text-[#F5F0E8] font-medium tracking-wider">Admin Portal</p>
         </div>
 
-        <nav className="flex-1 space-y-1 px-2 lg:px-6">
+        <nav className="flex-1 min-h-0 overflow-y-auto hide-scrollbar space-y-1 px-2 lg:px-6">
           {navLinks.map((link) => {
             const isActive = pathname === link.href || (link.href !== "/admin" && pathname.startsWith(link.href));
             return (
               <Link
                 key={link.href}
                 href={link.href}
-                className={`rounded-lg px-4 py-3 flex items-center gap-4 transition-all duration-200 font-jost tracking-wide ${isActive
+                className={`rounded-lg px-4 py-2 flex items-center gap-3.5 text-[15px] transition-all duration-200 font-jost tracking-wide ${isActive
                     ? "bg-[#647b53] text-[#f9ffed] font-bold shadow-sm"
                     : "text-[#d6c3b3] hover:bg-[#d6c3b3]/10 hover:text-white"
                   }`}
@@ -175,8 +195,8 @@ export default function AdminNavigation({
           })}
         </nav>
 
-        <div className="mt-auto px-2 lg:px-6 pt-6 border-t border-[#d6c3b3]/20">
-          <div className="mb-6 px-4 flex items-center gap-4">
+        <div className="mt-auto px-2 lg:px-6 pt-4 border-t border-[#d6c3b3]/20">
+          <div className="mb-3 px-4 flex items-center gap-4">
             {user && profile ? (
               <>
                 <div className="w-10 h-10 shrink-0 rounded-full flex items-center justify-center font-jost font-medium text-sm bg-[#7A9268] text-white ring-2 ring-white/15">
@@ -198,7 +218,7 @@ export default function AdminNavigation({
 
           <button
             onClick={() => setIsLogoutModalOpen(true)}
-            className="text-[#d6c3b3] hover:bg-white/5 hover:text-white rounded-lg px-4 py-3 flex items-center gap-4 transition-all duration-200 w-full text-left font-jost tracking-wide"
+            className="text-[#d6c3b3] hover:bg-white/5 hover:text-white rounded-lg px-4 py-2 flex items-center gap-3.5 text-[15px] transition-all duration-200 w-full text-left font-jost tracking-wide"
           >
             <MdLogout className="text-xl" />
             <span>Logout</span>

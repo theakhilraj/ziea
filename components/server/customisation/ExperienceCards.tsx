@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { MdOutlineSupportAgent, MdOutlineDraw, MdOutlineTune } from "react-icons/md";
 import { buttonBase, buttonVariants } from "@/components/ui/Button";
-import { WA_INSPIRATION, WA_CUSTOMISE } from "./links";
+import { WA_CUSTOMISE } from "./links";
 
 interface ExperienceCard {
   icon: typeof MdOutlineSupportAgent;
@@ -30,8 +30,8 @@ const CARDS: ExperienceCard[] = [
     perfectFor: "I saw a dress I love.",
     body: "Share photos or sketches. Our team reviews your ideas and gets in touch with the next steps.",
     cta: "Share Design",
-    href: WA_INSPIRATION,
-    external: true,
+    href: "/customisation/inquiry",
+    external: false,
   },
   {
     icon: MdOutlineTune,
