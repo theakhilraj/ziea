@@ -142,12 +142,12 @@ export default async function CartAdditionsPage({
                       </div>
                       <div className="flex items-center justify-between text-sm">
                         <span className="text-[#2C3829]/50 font-label-sm uppercase tracking-wider text-xs">Size / Qty</span>
-                        <span className="text-[#2C3829] font-jost text-base font-medium">{`Size ${row.size ?? '—'} · Qty ${row.quantity}`}</span>
+                        <span className="text-[#2C3829] font-jost text-base font-medium">{`Size ${row.size ?? '-'} · Qty ${row.quantity}`}</span>
                       </div>
                       <div className="flex items-center justify-between text-sm">
                         <span className="text-[#2C3829]/50 font-label-sm uppercase tracking-wider text-xs">Added</span>
                         <span className="text-[#2C3829]/80 font-jost text-right">
-                          {formattedDate ?? '—'}
+                          {formattedDate ?? '-'}
                           {formattedTime && <span className="block text-[#2C3829]/50 text-xs">{formattedTime}</span>}
                         </span>
                       </div>
@@ -195,13 +195,13 @@ export default async function CartAdditionsPage({
                         </TableCell>
                         <TableCell>
                           <span className="text-[#2C3829] font-jost text-base font-medium">
-                            {`Size ${row.size ?? '—'} · Qty ${row.quantity}`}
+                            {`Size ${row.size ?? '-'} · Qty ${row.quantity}`}
                           </span>
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex flex-col items-end">
                             <span className="text-[#2C3829] font-medium font-jost text-sm">
-                              {formattedDate ?? '—'}
+                              {formattedDate ?? '-'}
                             </span>
                             {formattedTime && (
                               <span className="text-[#2C3829]/60 font-jost text-xs mt-0.5">

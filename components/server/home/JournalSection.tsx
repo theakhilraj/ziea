@@ -37,7 +37,7 @@ export default function JournalSection() {
             />
           </div>
           <div className="p-4 space-y-3 bg-surface">
-            <span className="font-label-sm text-secondary uppercase tracking-widest">Heritage — Sept 2023</span>
+            <span className="font-label-sm text-secondary uppercase tracking-widest">Heritage - Sept 2023</span>
             <h4 className="cormorant text-2xl text-text">Weaving Generations: The Loom Story</h4>
             <p className="jost text-muted line-clamp-2">
               Our commitment to sustainable fashion begins with the hands that weave our identity. Step inside our traditional workshops...

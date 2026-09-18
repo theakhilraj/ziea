@@ -85,7 +85,7 @@ export default function AuthForm({ initialMode }: AuthFormProps) {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (emailError) return;
-    
+
     setIsLoading(true);
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
@@ -117,12 +117,12 @@ export default function AuthForm({ initialMode }: AuthFormProps) {
             user_id: data.user.id,
             type: `${roleLabel} Login`,
             description: `${roleLabel} ${name}`.trim() + ' logged in',
-          }).then(() => {});
+          }).then(() => { });
           supabase
             .from('users')
             .update({ last_login_at: new Date().toISOString() })
             .eq('id', data.user.id)
-            .then(() => {});
+            .then(() => { });
         } catch {
           // Logging/role read must never block sign-in.
         }
@@ -155,7 +155,7 @@ export default function AuthForm({ initialMode }: AuthFormProps) {
       showToast("Passwords do not match.", true);
       return;
     }
-    
+
     setIsLoading(true);
     try {
       // Split name for metadata
@@ -179,12 +179,12 @@ export default function AuthForm({ initialMode }: AuthFormProps) {
       if (error) throw error;
 
       if (data.user && data.user.identities && data.user.identities.length === 0) {
-         showToast("An account with this email already exists.", true);
-         return;
+        showToast("An account with this email already exists.", true);
+        return;
       }
 
       showToast("Account created successfully! Please check your email.");
-      
+
       // Cleanup fields
       setFullName('');
       setEmail('');
@@ -196,9 +196,9 @@ export default function AuthForm({ initialMode }: AuthFormProps) {
 
       // Optional: Auto redirect to login
       setTimeout(() => {
-         router.push('/login');
+        router.push('/login');
       }, 2000);
-      
+
     } catch (error: any) {
       showToast(error.message || "Failed to create account.", true);
     } finally {
@@ -213,7 +213,7 @@ export default function AuthForm({ initialMode }: AuthFormProps) {
         <Link href="/" className="hover:opacity-80 transition-opacity">
           <Image
             src="/ZIEA_Splash2.png"
-            alt="ZIEA Clothing — Everyday Comfort"
+            alt="ZIEA Clothing - Everyday Comfort"
             width={220}
             height={85}
             className="h-16 w-auto object-contain -mb-1"
@@ -303,7 +303,7 @@ export default function AuthForm({ initialMode }: AuthFormProps) {
             <form className="space-y-6" onSubmit={handleSignup}>
               <Input
                 label="Full Name"
-                placeholder="Sarah Jenkins"
+                placeholder="John Doe"
                 required
                 type="text"
                 value={fullName}
@@ -341,7 +341,7 @@ export default function AuthForm({ initialMode }: AuthFormProps) {
                     onClick={() => setShowPassword(!showPassword)}
                     className="text-on-surface-variant/50 hover:text-primary transition-colors flex items-center"
                   >
-                      {showPassword ? <MdOutlineVisibilityOff className="text-xl" /> : <MdOutlineVisibility className="text-xl" />}
+                    {showPassword ? <MdOutlineVisibilityOff className="text-xl" /> : <MdOutlineVisibility className="text-xl" />}
                   </button>
                 }
               />
@@ -358,7 +358,7 @@ export default function AuthForm({ initialMode }: AuthFormProps) {
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                     className="text-on-surface-variant/50 hover:text-primary transition-colors flex items-center"
                   >
-                      {showConfirmPassword ? <MdOutlineVisibilityOff className="text-xl" /> : <MdOutlineVisibility className="text-xl" />}
+                    {showConfirmPassword ? <MdOutlineVisibilityOff className="text-xl" /> : <MdOutlineVisibility className="text-xl" />}
                   </button>
                 }
               />

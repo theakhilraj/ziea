@@ -62,8 +62,8 @@ export async function sendProtoformEnquiry(
   const rows: Array<[string, string]> = [
     ["Name", name],
     ["Email", email],
-    ["Phone", phone || "—"],
-    ["Message", message || "—"],
+    ["Phone", phone || "-"],
+    ["Message", message || "-"],
   ];
 
   const html = `
@@ -74,14 +74,14 @@ export async function sendProtoformEnquiry(
       </div>
       <table style="width:100%;border-collapse:collapse;background:#ffffff;border:1px solid #e2dccf;border-top:none;border-radius:0 0 12px 12px">
         ${rows
-          .map(
-            ([k, v]) => `
+      .map(
+        ([k, v]) => `
           <tr>
             <td style="padding:12px 16px;border-top:1px solid #eee;font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:#7A7068;width:110px;vertical-align:top">${k}</td>
             <td style="padding:12px 16px;border-top:1px solid #eee;font-size:14px;color:#2C3829;white-space:pre-wrap">${escapeHtml(v)}</td>
           </tr>`,
-          )
-          .join("")}
+      )
+      .join("")}
       </table>
     </div>`;
 
@@ -92,7 +92,7 @@ export async function sendProtoformEnquiry(
       from,
       to: [to],
       replyTo: email,
-      subject: `New enquiry from ${name} — Protoform (via ZIEA)`,
+      subject: `New enquiry from ${name} - Protoform (via ZIEA)`,
       html,
       text,
     });
