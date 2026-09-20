@@ -147,7 +147,7 @@ export default function Header() {
         .from('users')
         .update({ last_seen_at: new Date().toISOString() })
         .eq('id', user.id)
-        .then(() => {});
+        .then(() => { });
     }
   }, [pathname, user?.id, supabase]);
 
@@ -227,7 +227,7 @@ export default function Header() {
 
   const menuItems = [
     { icon: <MdHome className="text-2xl" />, label: "Home", href: "/" },
-    { icon: <MdOutlineStyle className="text-2xl" />, label: "Collections", href: "/collections" },
+    { icon: <MdOutlineStyle className="text-2xl" />, label: "Categories", href: "/collections" },
     { icon: <MdOutlineReceiptLong className="text-2xl" />, label: "My Orders", href: "/orders" },
     { icon: <MdOutlineInfo className="text-2xl" />, label: "About Us", href: "/about-us" },
     { icon: <MdOutlineMail className="text-2xl" />, label: "Contact Us", href: "/contact-us" },
@@ -252,7 +252,7 @@ export default function Header() {
           {/* Primary nav */}
           <nav className="flex items-center gap-3 lg:gap-5 text-[11px] lg:text-[13px] font-semibold tracking-wide text-text/80">
             <Link href="/" className="hover:text-primary transition-colors whitespace-nowrap">HOME</Link>
-            <Link href="/collections" className="hover:text-primary transition-colors whitespace-nowrap">COLLECTIONS</Link>
+            <Link href="/collections" className="hover:text-primary transition-colors whitespace-nowrap">CATEGORIES</Link>
             <Link href="/about-us" className="hover:text-primary transition-colors whitespace-nowrap">ABOUT US</Link>
             <Link href="/contact-us" className="hover:text-primary transition-colors whitespace-nowrap">CONTACT US</Link>
             <Link href="/contact-us?type=collaboration" className="hover:text-primary transition-colors whitespace-nowrap">BULK ORDERS</Link>
@@ -408,11 +408,10 @@ export default function Header() {
                     href={item.href || "#"}
                     onClick={closeMenu}
                     aria-current={isActive ? "page" : undefined}
-                    className={`flex items-center gap-4 rounded-xl px-3 py-2.5 transition-colors ${
-                      isActive
-                        ? "bg-primary/15 text-primary font-semibold"
-                        : "text-text hover:bg-primary/10 hover:text-primary"
-                    }`}
+                    className={`flex items-center gap-4 rounded-xl px-3 py-2.5 transition-colors ${isActive
+                      ? "bg-primary/15 text-primary font-semibold"
+                      : "text-text hover:bg-primary/10 hover:text-primary"
+                      }`}
                   >
                     {item.icon}
                     <span className="font-label-lg">{item.label}</span>

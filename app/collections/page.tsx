@@ -96,48 +96,48 @@ export default async function CollectionsPage({ searchParams }: CollectionsPageP
       <main className="bg-background mt-16 md:mt-24 min-h-screen">
         <div className="w-full px-page pt-4 md:pt-6 pb-10 md:pb-14">
 
-        {/* Breadcrumbs */}
-        <div className="mb-6 md:mb-8">
-          <nav className="flex text-[13px] md:text-sm text-[#44483f]">
-            <Link href="/" className="hover:text-[#4c623d] transition-colors">Home</Link>
-            <span className="mx-2">/</span>
-            <span className="text-[#211a15]">Collections</span>
-          </nav>
-        </div>
-        
-        {/* Page heading (shown on mobile + desktop) */}
-        <h1 className="cormorant text-4xl md:text-6xl text-primary-dark mb-3 md:mb-4 text-center">Collections</h1>
-
-        {/* Category tabs (centered) with the Filters trigger pinned to the right on
-            desktop, and stacked full-width below the tabs on mobile. */}
-        <div className="relative mb-6 md:mb-8">
-          <CategoryTabs />
-          <div className="mt-3 md:mt-0 md:absolute md:right-0 md:top-1/2 md:-translate-y-1/2 md:z-20">
-            <FiltersPanel categories={categories} facets={facets} />
+          {/* Breadcrumbs */}
+          <div className="mb-6 md:mb-8">
+            <nav className="flex text-[13px] md:text-sm text-[#44483f]">
+              <Link href="/" className="hover:text-[#4c623d] transition-colors">Home</Link>
+              <span className="mx-2">/</span>
+              <span className="text-[#211a15]">Categories</span>
+            </nav>
           </div>
-        </div>
 
-        <h2 className="sr-only">Products</h2>
-        <ProductGrid
-          items={productData.items}
-          total={productData.total}
-          categories={categories}
-          category={category}
-          page={normalizedPage}
-          q={q}
-          minPrice={minPrice}
-          maxPrice={maxPrice}
-          onSale={onSale}
-          inStock={inStock}
-          badges={badges}
-          sizes={sizes}
-          materials={materials}
-          sort={sort}
-        />
+          {/* Page heading (shown on mobile + desktop) */}
+          <h1 className="cormorant text-4xl md:text-6xl text-primary-dark mb-3 md:mb-4 text-center">Categories</h1>
+
+          {/* Category tabs (centered) with the Filters trigger pinned to the right on
+            desktop, and stacked full-width below the tabs on mobile. */}
+          <div className="relative mb-6 md:mb-8">
+            <CategoryTabs />
+            <div className="mt-3 md:mt-0 md:absolute md:right-0 md:top-1/2 md:-translate-y-1/2 md:z-20">
+              <FiltersPanel categories={categories} facets={facets} />
+            </div>
+          </div>
+
+          <h2 className="sr-only">Products</h2>
+          <ProductGrid
+            items={productData.items}
+            total={productData.total}
+            categories={categories}
+            category={category}
+            page={normalizedPage}
+            q={q}
+            minPrice={minPrice}
+            maxPrice={maxPrice}
+            onSale={onSale}
+            inStock={inStock}
+            badges={badges}
+            sizes={sizes}
+            materials={materials}
+            sort={sort}
+          />
 
         </div>
       </main>
-      
+
       <Footer />
     </>
   );

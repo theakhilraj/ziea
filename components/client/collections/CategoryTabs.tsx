@@ -35,10 +35,9 @@ export default function CategoryTabs() {
   }, []);
 
   const tabClass = (isActive: boolean) =>
-    `px-4 py-1.5 md:px-6 md:py-2.5 rounded-full whitespace-nowrap text-[13px] md:text-sm font-medium transition-all active:scale-95 shadow-sm ${
-      isActive
-        ? "bg-[#4c623d] text-white"
-        : "bg-[#eee0d6]/50 text-[#44483f] hover:bg-[#eee0d6]"
+    `px-4 py-1.5 md:px-6 md:py-2.5 rounded-full whitespace-nowrap text-[13px] md:text-sm font-medium transition-all active:scale-95 shadow-sm ${isActive
+      ? "bg-[#4c623d] text-white"
+      : "bg-[#eee0d6]/50 text-[#44483f] hover:bg-[#eee0d6]"
     }`;
 
   return (

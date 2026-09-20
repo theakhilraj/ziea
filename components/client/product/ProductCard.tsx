@@ -69,10 +69,10 @@ export default function ProductCard({
   return (
     <Link
       href={productPath(productCode, categorySlug)}
-      className="flex flex-col space-y-4 group"
+      className="flex flex-col space-y-4 group bg-white p-2 rounded-xl"
     >
       {/* Product Image */}
-      <div className="relative bg-surface rounded-xl overflow-hidden aspect-[4/5] shadow-[0px_2px_16px_rgba(44,56,41,0.08)]">
+      <div className="relative rounded-xl overflow-hidden aspect-[4/5] shadow-[0px_2px_16px_rgba(44,56,41,0.08)]">
         <div className="absolute inset-0 group-hover:scale-105 transition-transform duration-700 ease-in-out">
           <SmartImage
             src={imageUrl}
@@ -152,14 +152,14 @@ export default function ProductCard({
         )}
 
         {/* Add to Cart — same deep-forest style as the Hero "Shop Now" button */}
-        <Button
+        {/* <Button
           type="button"
           variant="auth-primary"
           onClick={handleAddToCart}
           className={`gap-2 mt-3 !py-3 !text-base ${isAdded ? "!bg-primary" : ""}`}
         >
           {isAdded ? "Added!" : "Add to Cart"}
-        </Button>
+        </Button> */}
       </div>
     </Link>
   );
