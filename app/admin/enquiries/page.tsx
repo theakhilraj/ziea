@@ -6,7 +6,7 @@ import { createClient } from '@/utils/supabase/server';
 export const dynamic = 'force-dynamic';
 
 export const metadata = {
-  title: 'Enquiries | ZIEA Admin',
+  title: 'Enquiries',
   robots: { index: false },
 };
 

@@ -238,6 +238,8 @@ export default function Hero({
               px-3
               md:px-6
               focus:outline-none
+              pointer-events-none
+              md:pointer-events-auto
             "
           >
             <MdChevronLeft
@@ -271,6 +273,8 @@ export default function Hero({
               px-3
               md:px-6
               focus:outline-none
+              pointer-events-none
+              md:pointer-events-auto
             "
           >
             <MdChevronRight

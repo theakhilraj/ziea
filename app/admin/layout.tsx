@@ -9,6 +9,16 @@ import OrdersProvider from '@/components/client/admin/OrdersProvider';
 import ConsultationsProvider from '@/components/client/admin/ConsultationsProvider';
 import DesignInquiriesProvider from '@/components/client/admin/DesignInquiriesProvider';
 
+// Admin-only title template. Overrides the root layout's "%s | ZIEA" so admin
+// pages read "<Page> | ZIEA Admin" (each page sets just the bare name — the
+// suffix is applied here, once, avoiding the doubled "| ZIEA Admin | ZIEA").
+export const metadata = {
+  title: {
+    template: '%s | ZIEA Admin',
+    default: 'ZIEA Admin',
+  },
+};
+
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   // Local JWT verification + role claim (no Auth-server round-trip; and no DB
   // query at all once the custom-claim hook is configured, so this gate stops

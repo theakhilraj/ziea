@@ -17,7 +17,7 @@ import { getAnalytics } from '@/utils/analytics';
 export const dynamic = 'force-dynamic';
 
 export const metadata = {
-  title: 'Analytics | ZIEA Admin',
+  title: 'Analytics',
   robots: { index: false },
 };
 

@@ -3,7 +3,7 @@ import { Metadata } from 'next';
 import { getBranding } from '@/utils/branding.server';
 
 export const metadata: Metadata = {
-  title: 'Reset Password | ZIEA',
+  title: 'Reset Password',
   description: 'Create a new password for your ZIEA account.',
 };
 

@@ -9,7 +9,7 @@ import { createClient } from '@/utils/supabase/server';
 export const dynamic = 'force-dynamic';
 
 export const metadata = {
-  title: 'Cart Additions | ZIEA Admin',
+  title: 'Cart Additions',
   robots: { index: false },
 };
 

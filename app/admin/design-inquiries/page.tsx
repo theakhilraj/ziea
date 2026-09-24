@@ -11,7 +11,7 @@ import type {
 export const dynamic = 'force-dynamic';
 
 export const metadata = {
-  title: 'Design Inquiries | ZIEA Admin',
+  title: 'Design Inquiries',
   robots: { index: false },
 };
 

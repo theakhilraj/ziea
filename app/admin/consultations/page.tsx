@@ -12,7 +12,7 @@ import type {
 export const dynamic = 'force-dynamic';
 
 export const metadata = {
-  title: 'Consultations | ZIEA Admin',
+  title: 'Consultations',
   robots: { index: false },
 };
 

@@ -3,7 +3,7 @@ import AuthForm from '../../components/client/auth/AuthForm';
 import { getBranding } from '@/utils/branding.server';
 
 export const metadata: Metadata = {
-  title: 'Sign Up | ZIEA',
+  title: 'Sign Up',
   description: 'Create an account to join the ZIEA community and experience the gentle embrace of everyday comfort.',
 };
 
