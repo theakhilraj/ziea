@@ -92,6 +92,11 @@ export default function RootLayout({
   return (
     <html
       lang="en"
+      // Next 16 no longer auto-overrides `scroll-behavior: smooth` (globals.css)
+      // during route transitions, which made client navigation smooth-scroll to
+      // top from the old position (looked like landing in blank space). This attr
+      // restores the instant scroll-to-top on nav while keeping in-page anchors smooth.
+      data-scroll-behavior="smooth"
       className={`light antialiased ${playfair.variable} ${jost.variable}`}
     >
       <head>
