@@ -63,7 +63,7 @@ export default async function WishlistActivityPage({
     return {
       userName: name || 'Unknown User',
       userEmail: user?.email ?? '',
-      productCode: product?.product_code ?? '—',
+      productCode: product?.product_code ?? '-',
       productName: product?.name ?? '',
       createdAt: row.created_at ?? null,
     };
@@ -138,7 +138,7 @@ export default async function WishlistActivityPage({
                       <div className="flex items-center justify-between text-sm">
                         <span className="text-[#2C3829]/50 font-label-sm uppercase tracking-wider text-xs">Added</span>
                         <span className="text-[#2C3829]/80 font-jost text-right">
-                          {formattedDate ?? '—'}
+                          {formattedDate ?? '-'}
                           {formattedTime && <span className="block text-[#2C3829]/50 text-xs">{formattedTime}</span>}
                         </span>
                       </div>

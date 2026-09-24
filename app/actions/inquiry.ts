@@ -116,7 +116,7 @@ export type SubmitInquiryResult =
   | { ok: false; error: string };
 
 const DATE_UNAVAILABLE =
-  "That delivery date is no longer available — please pick another." as const;
+  "That delivery date is no longer available - please pick another." as const;
 const GENERIC_ERROR = "Couldn't submit your inquiry. Please try again." as const;
 
 // ── Helpers ──────────────────────────────────────────────────────────────────

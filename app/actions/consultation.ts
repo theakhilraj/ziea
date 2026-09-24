@@ -74,7 +74,7 @@ export type CustomisationSubmitResult =
   | { ok: true; ref: string }
   | { ok: false; error: string };
 
-const SLOT_TAKEN = "That time was just taken — please pick another." as const;
+const SLOT_TAKEN = "That time was just taken - please pick another." as const;
 
 // ── Available-slots wrapper (customer form calls this on date select) ─────────
 
@@ -336,8 +336,8 @@ async function sendAdminEmail(p: AdminEmailPayload): Promise<void> {
       <tr>
         <td style="padding:12px 16px;border-top:1px solid #eee;font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:#7A7068;width:120px;vertical-align:top">Reference image</td>
         <td style="padding:12px 16px;border-top:1px solid #eee;font-size:14px;color:#2C3829"><a href="${escapeHtml(
-          p.imageUrl,
-        )}" style="color:#2C3829">View image</a></td>
+      p.imageUrl,
+    )}" style="color:#2C3829">View image</a></td>
       </tr>`
     : "";
 
@@ -349,16 +349,16 @@ async function sendAdminEmail(p: AdminEmailPayload): Promise<void> {
       </div>
       <table style="width:100%;border-collapse:collapse;background:#ffffff;border:1px solid #e2dccf;border-top:none;border-radius:0 0 12px 12px">
         ${rows
-          .map(
-            ([k, v]) => `
+      .map(
+        ([k, v]) => `
           <tr>
             <td style="padding:12px 16px;border-top:1px solid #eee;font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:#7A7068;width:120px;vertical-align:top">${k}</td>
             <td style="padding:12px 16px;border-top:1px solid #eee;font-size:14px;color:#2C3829;white-space:pre-wrap">${escapeHtml(
-              v,
-            )}</td>
+          v,
+        )}</td>
           </tr>`,
-          )
-          .join("")}
+      )
+      .join("")}
         ${imageRow}
       </table>
     </div>`;

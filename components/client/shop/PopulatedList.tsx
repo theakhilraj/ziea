@@ -57,9 +57,8 @@ export default function PopulatedList({ items, type }: PopulatedListProps) {
 
   return (
     <div
-      className={`grid grid-cols-2 gap-x-4 gap-y-10 ${
-        type === 'wishlist' ? 'md:grid-cols-3 lg:grid-cols-4' : 'md:grid-cols-3'
-      }`}
+      className={`grid grid-cols-2 gap-x-4 gap-y-10 ${type === 'wishlist' ? 'md:grid-cols-3 lg:grid-cols-4' : 'md:grid-cols-3'
+        }`}
     >
       {visibleItems.map((item) => {
         const qty = pendingQty[item.id] ?? item.quantity ?? 1;
@@ -99,7 +98,7 @@ export default function PopulatedList({ items, type }: PopulatedListProps) {
 
             <div className="space-y-1">
               <Link href={productPath(item.productCode, item.categorySlug)}>
-                <h3 className="font-label-md text-text line-clamp-2 min-h-[2.5rem] hover:text-primary transition-colors">{item.title}</h3>
+                <h3 className="font-label-md text-text line-clamp-2 hover:text-primary transition-colors">{item.title}</h3>
               </Link>
               {item.variant ? (
                 <p className="font-jost text-[13px] text-on-surface-variant truncate">

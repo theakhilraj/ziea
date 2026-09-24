@@ -43,7 +43,7 @@ export default async function ProductViewsPage({
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   const rows: ViewRow[] = (data ?? []).map((row: any) => ({
-    productCode: row.product_code ?? '—',
+    productCode: row.product_code ?? '-',
     productName: row.name ?? 'Unnamed',
     views: row.view_count ?? 0,
   }));

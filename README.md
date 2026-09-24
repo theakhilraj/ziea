@@ -4,8 +4,8 @@
 A single Next.js 16 application serving a public e‑commerce storefront and a private, role‑gated admin dashboard over a Supabase backend.
 
 - **Live:** [https://ziea.in](https://ziea.in)
-- **Ordering:** WhatsApp click‑to‑chat (`wa.me`) — order recorded in the DB, no payment gateway
-- **Design language:** calm, feminine "everyday luxury" — sage `#7A9268` / deep‑forest `#2C3829` on warm cream `#F5F0E8`
+- **Ordering:** WhatsApp click‑to‑chat (`wa.me`) - order recorded in the DB, no payment gateway
+- **Design language:** calm, feminine "everyday luxury" - sage `#7A9268` / deep‑forest `#2C3829` on warm cream `#F5F0E8`
 
 > 📄 In‑depth docs live at the repo root: **`Ziea-Architecture.html`** (full system architecture + live Lighthouse metrics). Open either in a browser.
 
@@ -16,7 +16,7 @@ A single Next.js 16 application serving a public e‑commerce storefront and a p
 | Layer | Choice |
 |---|---|
 | Framework | **Next.js 16** (App Router, Turbopack), **React 19** Server Components |
-| Backend | **Supabase** — Postgres, Auth (JWT), Realtime, Row‑Level Security |
+| Backend | **Supabase** - Postgres, Auth (JWT), Realtime, Row‑Level Security |
 | Styling | **Tailwind CSS v4** (`@theme` tokens), `next/font` (Playfair Display + Jost) |
 | Media / CDN | Filesystem CDN (`/cdn`) served via a Node route |
 | Email | **Resend** (footer contact enquiries) |
@@ -33,9 +33,9 @@ A single Next.js 16 application serving a public e‑commerce storefront and a p
 
 **Ordering** — "Buy Now" and cart checkout record an order (`status: Initiated`) then hand off to WhatsApp, so no lead is lost. Guest‑friendly.
 
-**Admin console** (`/admin`, role‑gated) — Dashboard, Analytics, Products, Categories, Customers, Branding (editable site imagery), Activity feed, Enquiries inbox, Orders inbox — with live sidebar badges via Supabase Realtime.
+**Admin console** (`/admin`, role‑gated) - Dashboard, Analytics, Products, Categories, Customers, Branding (editable site imagery), Activity feed, Enquiries inbox, Orders inbox - with live sidebar badges via Supabase Realtime.
 
-**SEO** — code‑generated robots, sitemap, PWA manifest, per‑page canonicals, Organization + Product JSON‑LD. Scores 100 on desktop & mobile.
+**SEO** - code‑generated robots, sitemap, PWA manifest, per‑page canonicals, Organization + Product JSON‑LD. Scores 100 on desktop & mobile.
 
 ---
 
@@ -52,7 +52,7 @@ npm install
 ```
 
 ### 2. Configure environment
-Create `.env.local` (git‑ignored) — see the table below. Minimum to boot: the three Supabase keys.
+Create `.env.local` (git‑ignored) - see the table below. Minimum to boot: the three Supabase keys.
 
 ### 3. Run the dev server
 ```bash
@@ -138,4 +138,4 @@ npm run lint     # eslint
 
 ## License
 
-Proprietary — © ZIEA. All rights reserved.
+Proprietary - © ZIEA. All rights reserved.

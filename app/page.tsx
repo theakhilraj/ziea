@@ -20,7 +20,7 @@ export default async function Home() {
       <main className="mt-16 md:mt-24 overflow-x-hidden flex flex-col gap-4 md:gap-6 pb-10">
         {/* Single descriptive h1 for SEO (visually hidden — the hero carries the visual brand). */}
         <h1 className="sr-only">
-          ZIEA — Premium Kerala Women&apos;s Wear: Handcrafted Kurthis, Nightwear &amp; Everyday Elegance
+          ZIEA - Premium Kerala Women&apos;s Wear: Handcrafted Kurthis, Nightwear &amp; Everyday Elegance
         </h1>
         <Hero slides={home.heroSlides} />
         <CategoryPills />
