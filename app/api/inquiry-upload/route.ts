@@ -29,8 +29,12 @@ const INQUIRY_FOLDER = 'inquiries';
 
 // HOSTINGER FILESYSTEM STORAGE — the app runs as a persistent Node server on
 // Hostinger, so uploads are written directly to the local filesystem.
-//   ASSET_UPLOAD_DIR       PROD: /home/<user>/domains/ziea.in/public_html/cdn
-//   NEXT_PUBLIC_ASSET_BASE_URL  PROD: https://ziea.in/cdn
+// IMPORTANT: ASSET_UPLOAD_DIR must live OUTSIDE public_html. Hostinger overwrites
+// public_html on every deploy, which wipes uploaded assets. Point it at a
+// persistent path (sibling of public_html) and serve via the app's /cdn route so
+// files survive deploys:
+//   ASSET_UPLOAD_DIR            PROD: /home/<user>/ziea-assets/cdn   (NOT public_html)
+//   NEXT_PUBLIC_ASSET_BASE_URL  PROD: /cdn   (relative → served by app/cdn/[...path])
 // Dev defaults below write to ./storage/cdn and serve from the /cdn route.
 const UPLOAD_DIR =
   process.env.ASSET_UPLOAD_DIR || path.join(process.cwd(), 'storage', 'cdn');
