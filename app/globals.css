@@ -227,3 +227,48 @@
     transform: translateX(240%);
   }
 }
+
+/* Invoice printing: show ONLY the invoice document, hide the admin chrome, and
+   constrain it to the page width so nothing clips left/right. */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+
+  .invoice-print,
+  .invoice-print * {
+    visibility: visible;
+  }
+
+  .invoice-print {
+    position: fixed;   /* fixed → relative to the page, ignoring the centered max-w container */
+    left: 0;
+    top: 0;
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    box-shadow: none !important;   /* keep the sage frame + padding in print */
+  }
+
+  /* Let the items table lay out fully (no horizontal scroll clip in print). */
+  .invoice-print .inv-scroll {
+    overflow: visible !important;
+  }
+
+  /* Shrink the dense table a touch + tighten cells so all columns fit A4. */
+  .invoice-print table {
+    font-size: 10px;
+    width: 100%;
+  }
+
+  .invoice-print th,
+  .invoice-print td {
+    padding: 3px 4px !important;
+    word-break: break-word;
+  }
+
+  @page {
+    size: A4 portrait;
+    margin: 8mm;
+  }
+}

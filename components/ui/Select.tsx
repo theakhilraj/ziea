@@ -17,9 +17,13 @@ interface SelectProps {
   onAdd?: (newOption: string) => void;
   /** Show the "None" (clear) option at the top of the list. Default true. */
   allowNone?: boolean;
+  /** Extra classes merged onto the trigger box (e.g. compact font / no-wrap). */
+  triggerClassName?: string;
+  /** Extra classes merged onto each dropdown option (e.g. compact font). */
+  optionClassName?: string;
 }
 
-export function Select({ label, value, onChange, options, placeholder = "Select an option", allowAdd, onAdd, allowNone = true }: SelectProps) {
+export function Select({ label, value, onChange, options, placeholder = "Select an option", allowAdd, onAdd, allowNone = true, triggerClassName = "", optionClassName = "" }: SelectProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [newInput, setNewInput] = useState('');
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -41,11 +45,11 @@ export function Select({ label, value, onChange, options, placeholder = "Select 
       {label && (
         <label className="font-jost text-sm font-medium text-[#2C3829] mb-1 block">{label}</label>
       )}
-      <div 
-        className="w-full px-4 py-3 bg-white border border-[#d6c3b3] rounded-xl font-jost font-normal text-base text-[#2C3829] transition-all outline-none focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/5 hover:border-primary/50 duration-200 cursor-pointer flex justify-between items-center"
+      <div
+        className={`w-full px-4 py-3 bg-white border border-[#d6c3b3] rounded-xl font-jost font-normal text-base text-[#2C3829] transition-all outline-none focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/5 hover:border-primary/50 duration-200 cursor-pointer flex justify-between items-center ${triggerClassName}`}
         onClick={() => setIsOpen(!isOpen)}
       >
-        <span className={value ? "text-[#2C3829]" : "text-[#2C3829]/50"}>
+        <span className={`truncate ${value ? "text-[#2C3829]" : "text-[#2C3829]/50"}`}>
           {selectedOption ? selectedOption.label : (value || placeholder)}
         </span>
         <MdKeyboardArrowDown className={`text-xl transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
@@ -97,7 +101,7 @@ export function Select({ label, value, onChange, options, placeholder = "Select 
               <>
                 {allowNone && (
                   <div
-                    className={`px-4 py-2.5 rounded-lg cursor-pointer transition-colors ${!value ? 'bg-[#e5d8ce] font-medium' : 'hover:bg-[#FAF7F2]'}`}
+                    className={`px-4 py-2.5 rounded-lg cursor-pointer transition-colors ${!value ? 'bg-[#e5d8ce] font-medium' : 'hover:bg-[#FAF7F2]'} ${optionClassName}`}
                     onClick={() => {
                       onChange('');
                       setIsOpen(false);
@@ -109,7 +113,7 @@ export function Select({ label, value, onChange, options, placeholder = "Select 
                 {options.map(opt => (
                   <div
                     key={opt.value}
-                    className={`px-4 py-2.5 rounded-lg cursor-pointer transition-colors ${value === opt.value ? 'bg-[#e5d8ce] font-medium' : 'hover:bg-[#FAF7F2]'}`}
+                    className={`px-4 py-2.5 rounded-lg cursor-pointer transition-colors ${value === opt.value ? 'bg-[#e5d8ce] font-medium' : 'hover:bg-[#FAF7F2]'} ${optionClassName}`}
                     onClick={() => {
                       onChange(opt.value);
                       setIsOpen(false);

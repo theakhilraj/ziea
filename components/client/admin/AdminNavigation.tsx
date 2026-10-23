@@ -26,7 +26,8 @@ import {
   MdOutlineForum,
   MdOutlineShoppingBag,
   MdOutlineEventAvailable,
-  MdOutlineDesignServices
+  MdOutlineDesignServices,
+  MdOutlineReceiptLong
 } from 'react-icons/md';
 
 const AVATAR_COLORS = [
@@ -137,6 +138,7 @@ export default function AdminNavigation({
     { href: "/admin/branding", icon: <MdOutlineBrandingWatermark className="text-xl" />, label: "Branding" },
     { href: "/admin/enquiries", icon: <MdOutlineForum className="text-xl" />, label: "Enquiries" },
     { href: "/admin/orders", icon: <MdOutlineShoppingBag className="text-xl" />, label: "Orders" },
+    { href: "/admin/sales-invoices", icon: <MdOutlineReceiptLong className="text-xl" />, label: "Sales Invoices" },
     { href: "/admin/consultations", icon: <MdOutlineEventAvailable className="text-xl" />, label: "Consultations" },
     { href: "/admin/design-inquiries", icon: <MdOutlineDesignServices className="text-xl" />, label: "Design Inquiries" },
     { href: "/admin/activity", icon: <MdHistory className="text-xl" />, label: "Activity" },
