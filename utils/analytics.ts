@@ -26,6 +26,23 @@ export interface ActivityItem {
 }
 
 export type InteractionRange = "daily" | "weekly" | "monthly";
+export type SalesInvoiceRange = "all_time" | "this_month" | "last_3_months";
+
+export interface SalesInvoiceBucket {
+  label: string;
+  invoiced: number;
+  collected: number;
+}
+
+export interface SalesInvoiceAnalytics {
+  range: SalesInvoiceRange;
+  selectedMonth: string;
+  invoiceCount: number;
+  invoiced: number;
+  collected: number;
+  outstanding: number;
+  buckets: SalesInvoiceBucket[];
+}
 
 export interface ProductViewRow {
   productCode: string;
@@ -60,6 +77,7 @@ export interface AnalyticsData {
     fulfilled: number;
     cancelled: number;
   };
+  salesInvoices: SalesInvoiceAnalytics;
 }
 
 // ── Palette ───────────────────────────────────────────────────────────────────
@@ -119,6 +137,147 @@ function startOfMonth(d: Date): Date {
   x.setHours(0, 0, 0, 0);
   x.setDate(1);
   return x;
+}
+
+function businessDateParts(date = new Date()) {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Kolkata",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(date);
+  return Object.fromEntries(parts.map((part) => [part.type, part.value])) as Record<string, string>;
+}
+
+function monthKey(year: number, month: number) {
+  return `${year}-${String(month + 1).padStart(2, "0")}`;
+}
+
+function monthLabel(year: number, month: number) {
+  return new Intl.DateTimeFormat("en-IN", {
+    month: "short",
+    year: "2-digit",
+    timeZone: "Asia/Kolkata",
+  }).format(new Date(Date.UTC(year, month, 1)));
+}
+
+function salesFinancialYear(date: string) {
+  const [year, month] = date.split("-").map(Number);
+  const startYear = month >= 4 ? year : year - 1;
+  return { key: startYear, label: `FY ${String(startYear % 100).padStart(2, "0")}-${String((startYear + 1) % 100).padStart(2, "0")}` };
+}
+
+/**
+ * Summarize issued invoices and build the range-specific invoiced/collected chart.
+ * Draft and cancelled records are excluded so the figures represent issued business.
+ */
+export async function buildSalesInvoiceAnalytics(
+  supabase: SupabaseClient,
+  range: SalesInvoiceRange,
+  selectedMonth?: string,
+): Promise<SalesInvoiceAnalytics> {
+  const today = businessDateParts();
+  const currentMonth = Number(today.month) - 1;
+  const currentYear = Number(today.year);
+  const currentMonthKey = monthKey(currentYear, currentMonth);
+  const effectiveMonth = selectedMonth ?? currentMonthKey;
+  if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(effectiveMonth)) {
+    throw new Error("A valid month is required for sales invoice analytics.");
+  }
+  const [selectedYear, selectedMonthNumber] = (effectiveMonth ?? currentMonthKey).split("-").map(Number);
+  if (selectedYear > currentYear || (selectedYear === currentYear && selectedMonthNumber > currentMonth + 1)) {
+    throw new Error("Future months are not available for sales invoice analytics.");
+  }
+  const rangeStart = new Date(Date.UTC(selectedYear, selectedMonthNumber - 1, 1));
+  if (range === "last_3_months") rangeStart.setUTCMonth(rangeStart.getUTCMonth() - 2);
+  const startDate = range === "all_time"
+    ? null
+    : `${rangeStart.getUTCFullYear()}-${String(rangeStart.getUTCMonth() + 1).padStart(2, "0")}-01`;
+  const selectedMonthEnd = new Date(Date.UTC(selectedYear, selectedMonthNumber, 1));
+  const endExclusive = effectiveMonth === currentMonthKey
+    ? new Date(Date.UTC(Number(today.year), currentMonth, Number(today.day) + 1))
+    : selectedMonthEnd;
+  const endExclusiveDate = `${endExclusive.getUTCFullYear()}-${String(endExclusive.getUTCMonth() + 1).padStart(2, "0")}-${String(endExclusive.getUTCDate()).padStart(2, "0")}`;
+
+  type InvoiceAmounts = {
+    id: string;
+    invoice_date: string;
+    grand_total: number | string | null;
+    amount_paid: number | string | null;
+    outstanding: number | string | null;
+  };
+
+  const rows: InvoiceAmounts[] = [];
+  const pageSize = 1000;
+  for (let offset = 0; ; offset += pageSize) {
+    let query = supabase
+      .from("sale_invoices")
+      .select("id, invoice_date, grand_total, amount_paid, outstanding")
+      .eq("status", "saved")
+      .order("invoice_date", { ascending: true })
+      .order("id", { ascending: true })
+      .lt("invoice_date", endExclusiveDate)
+      .range(offset, offset + pageSize - 1);
+    if (startDate) query = query.gte("invoice_date", startDate);
+    const { data, error } = await query;
+    if (error) throw new Error(`Could not load sales invoice analytics: ${error.message}`);
+    const page = (data ?? []) as InvoiceAmounts[];
+    rows.push(...page);
+    if (page.length < pageSize) break;
+  }
+
+  const buckets = new Map<string, SalesInvoiceBucket & { sortKey: number }>();
+  const ensureBucket = (key: string, label: string, sortKey: number) => {
+    let bucket = buckets.get(key);
+    if (!bucket) {
+      bucket = { label, invoiced: 0, collected: 0, sortKey };
+      buckets.set(key, bucket);
+    }
+    return bucket;
+  };
+
+  for (const row of rows) {
+    const date = row.invoice_date;
+    const [year, month, day] = date.split("-").map(Number);
+    let bucket: SalesInvoiceBucket & { sortKey: number };
+
+    if (range === "this_month") {
+      const week = Math.floor((day - 1) / 7) + 1;
+      bucket = ensureBucket(`week-${week}`, `Week ${week}`, week);
+    } else if (range === "last_3_months") {
+      const key = monthKey(year, month - 1);
+      bucket = ensureBucket(key, monthLabel(year, month - 1), year * 12 + month - 1);
+    } else {
+      const financialYear = salesFinancialYear(date);
+      bucket = ensureBucket(String(financialYear.key), financialYear.label, financialYear.key);
+    }
+
+    bucket.invoiced += Number(row.grand_total ?? 0);
+    bucket.collected += Number(row.amount_paid ?? 0);
+  }
+
+  if (range === "this_month") {
+    for (let week = 1; week <= 5; week += 1) ensureBucket(`week-${week}`, `Week ${week}`, week);
+  } else if (range === "last_3_months") {
+    for (let offset = 2; offset >= 0; offset -= 1) {
+      const date = new Date(Date.UTC(selectedYear, selectedMonthNumber - 1 - offset, 1));
+      const year = date.getUTCFullYear();
+      const month = date.getUTCMonth();
+      ensureBucket(monthKey(year, month), monthLabel(year, month), year * 12 + month);
+    }
+  }
+
+  return {
+    range,
+    selectedMonth: effectiveMonth ?? currentMonthKey,
+    invoiceCount: rows.length,
+    invoiced: rows.reduce((total, row) => total + Number(row.grand_total ?? 0), 0),
+    collected: rows.reduce((total, row) => total + Number(row.amount_paid ?? 0), 0),
+    outstanding: rows.reduce((total, row) => total + Number(row.outstanding ?? 0), 0),
+    buckets: [...buckets.values()]
+      .sort((a, b) => a.sortKey - b.sortKey)
+      .map(({ label, invoiced, collected }) => ({ label, invoiced, collected })),
+  };
 }
 
 interface Bucket {
@@ -289,6 +448,7 @@ export async function getAnalytics(): Promise<AnalyticsData> {
     cartActivityRes,
     ordersRes,
     trend,
+    salesInvoices,
   ] = await Promise.all([
     supabase.from("products").select("*", { count: "exact", head: true }),
     supabase.from("products").select("view_count"),
@@ -307,6 +467,7 @@ export async function getAnalytics(): Promise<AnalyticsData> {
       .limit(200),
     supabase.from("orders").select("status"),
     buildInteractionSeries(supabase, "daily", 0),
+    buildSalesInvoiceAnalytics(supabase, "all_time"),
   ]);
 
   const totalProducts = productsCountRes.count ?? 0;
@@ -373,6 +534,7 @@ export async function getAnalytics(): Promise<AnalyticsData> {
   return {
     stats: { totalProducts, totalViews, wishlisted, cartCount },
     orders,
+    salesInvoices,
     trend: {
       range: "daily",
       offset: 0,

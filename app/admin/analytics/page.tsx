@@ -12,6 +12,7 @@ import { DonutChart } from '@/components/ui/DonutChart';
 import { ActivityRow } from '@/components/ui/ActivityRow';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/Table';
 import { AnalyticsTrends } from '@/components/client/admin/AnalyticsTrends';
+import { SalesInvoiceAnalytics } from '@/components/client/admin/SalesInvoiceAnalytics';
 import { getAnalytics } from '@/utils/analytics';
 
 export const dynamic = 'force-dynamic';
@@ -59,6 +60,8 @@ export default async function AnalyticsPage() {
           icon={MdOutlineShoppingCart}
         />
       </div>
+
+      <SalesInvoiceAnalytics initial={data.salesInvoices} />
 
       {/* Bento Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">

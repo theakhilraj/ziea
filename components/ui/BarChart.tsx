@@ -2,9 +2,10 @@ import React from "react";
 import type { BarDatum } from "@/utils/analytics";
 
 interface BarChartProps {
-  data: BarDatum[];
+  data: (BarDatum & { secondaryValue?: number })[];
   highlightLabel?: string;
   className?: string;
+  formatValue?: (value: number) => string;
 }
 
 /**
@@ -12,7 +13,7 @@ interface BarChartProps {
  * value; the highlighted bar (or, absent an explicit `highlightLabel`, the
  * tallest one) is drawn in deep forest, the rest in a sage tint.
  */
-export function BarChart({ data, highlightLabel, className = "" }: BarChartProps) {
+export function BarChart({ data, highlightLabel, className = "", formatValue = String }: BarChartProps) {
   if (!data || data.length === 0) {
     return (
       <div
@@ -23,7 +24,8 @@ export function BarChart({ data, highlightLabel, className = "" }: BarChartProps
     );
   }
 
-  const values = data.map((d) => d.value);
+  const hasSecondarySeries = data.some((d) => d.secondaryValue !== undefined);
+  const values = data.flatMap((d) => d.secondaryValue === undefined ? [d.value] : [d.value, d.secondaryValue]);
   const max = Math.max(...values, 1);
 
   // Resolve which bar to emphasise: explicit label if present in the data,
@@ -31,9 +33,16 @@ export function BarChart({ data, highlightLabel, className = "" }: BarChartProps
   const highlighted =
     highlightLabel && data.some((d) => d.label === highlightLabel)
       ? highlightLabel
-      : data[values.indexOf(Math.max(...values))]?.label;
+      : data.reduce((best, datum) =>
+          Math.max(datum.value, datum.secondaryValue ?? 0) >
+          Math.max(best.value, best.secondaryValue ?? 0)
+            ? datum
+            : best,
+        data[0]).label;
 
-  const ariaSummary = data.map((d) => `${d.label}: ${d.value}`).join(", ");
+  const ariaSummary = data
+    .map((d) => `${d.label}: ${formatValue(d.value)}${d.secondaryValue === undefined ? "" : `, collected ${formatValue(d.secondaryValue)}`}`)
+    .join(", ");
 
   return (
     <div
@@ -45,33 +54,50 @@ export function BarChart({ data, highlightLabel, className = "" }: BarChartProps
         {data.map((d, i) => {
           const isHi = d.label === highlighted;
           const heightPct = (d.value / max) * 100;
+          const secondaryHeightPct = ((d.secondaryValue ?? 0) / max) * 100;
           return (
             <div
               key={`${d.label}-${i}`}
               className="group flex-1 flex flex-col justify-end items-center h-full min-w-0 gap-1.5"
             >
-              {/* count label above the bar */}
-              <span
-                className={`font-jost text-xs leading-none ${
-                  isHi
-                    ? "font-bold text-[#2C3829]"
-                    : d.value > 0
-                      ? "text-[#2C3829]/70"
-                      : "text-[#2C3829]/30"
-                }`}
-              >
-                {d.value}
-              </span>
-              <div
-                className={`w-full rounded-t-lg origin-bottom animate-[barGrowIn_0.5s_ease-out_both] transition-colors group-hover:opacity-90 ${
-                  isHi ? "bg-[#2C3829]" : "bg-[#A8BC9A] group-hover:bg-[#8aa27a]"
-                }`}
-                style={{
-                  height: `${heightPct}%`,
-                  minHeight: d.value > 0 ? "4px" : "0",
-                  animationDelay: `${i * 60}ms`,
-                }}
-              />
+              {hasSecondarySeries ? (
+                <div className="flex h-full w-full items-end justify-center gap-1">
+                  <div
+                    title={`Invoiced: ${formatValue(d.value)}`}
+                    className="w-[40%] max-w-10 rounded-t-md bg-[#2C3829] transition-[height] duration-300"
+                    style={{ height: `${heightPct}%`, minHeight: d.value > 0 ? "4px" : "0" }}
+                  />
+                  <div
+                    title={`Collected: ${formatValue(d.secondaryValue ?? 0)}`}
+                    className="w-[40%] max-w-10 rounded-t-md bg-[#A8BC9A] transition-[height] duration-300"
+                    style={{ height: `${secondaryHeightPct}%`, minHeight: (d.secondaryValue ?? 0) > 0 ? "4px" : "0" }}
+                  />
+                </div>
+              ) : (
+                <>
+                  <span
+                    className={`font-jost text-xs leading-none ${
+                      isHi
+                        ? "font-bold text-[#2C3829]"
+                        : d.value > 0
+                          ? "text-[#2C3829]/70"
+                          : "text-[#2C3829]/30"
+                    }`}
+                  >
+                    {formatValue(d.value)}
+                  </span>
+                  <div
+                    className={`w-full rounded-t-lg origin-bottom animate-[barGrowIn_0.5s_ease-out_both] transition-colors group-hover:opacity-90 ${
+                      isHi ? "bg-[#2C3829]" : "bg-[#A8BC9A] group-hover:bg-[#8aa27a]"
+                    }`}
+                    style={{
+                      height: `${heightPct}%`,
+                      minHeight: d.value > 0 ? "4px" : "0",
+                      animationDelay: `${i * 60}ms`,
+                    }}
+                  />
+                </>
+              )}
             </div>
           );
         })}
@@ -99,6 +125,12 @@ export function BarChart({ data, highlightLabel, className = "" }: BarChartProps
                 >
                   {d.subLabel}
                 </span>
+              )}
+              {hasSecondarySeries && (
+                <div className="mt-2 flex flex-col items-center gap-0.5 whitespace-nowrap text-[10px] font-medium leading-tight sm:text-xs">
+                  <span className="text-[#2C3829]/80">{formatValue(d.value)}</span>
+                  <span className="text-[#718765]">{formatValue(d.secondaryValue ?? 0)}</span>
+                </div>
               )}
             </div>
           );
