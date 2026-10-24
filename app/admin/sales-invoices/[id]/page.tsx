@@ -22,16 +22,26 @@ export default async function InvoiceViewPage({ params }: { params: Promise<{ id
     supabase.from('payment_receipts').select('*').eq('invoice_id', id).order('payment_date', { ascending: true }),
   ]);
 
-  // Prefer the frozen snapshot; fall back to the live company for pre-snapshot invoices.
-  let issuer = (invoice as SaleInvoice).issuer_snapshot as Partial<IssuerCompany> | null;
-  if (!issuer && invoice.issuer_company_id) {
-    const { data: co } = await supabase.from('issuer_companies').select('*').eq('id', invoice.issuer_company_id).single();
+  // Prefer the frozen snapshot; only look up the logo when an older snapshot lacks it.
+  const invoiceData = invoice as SaleInvoice;
+  let issuer = invoiceData.issuer_snapshot as Partial<IssuerCompany> | null;
+  if (invoiceData.issuer_company_id && !issuer) {
+    const { data: co, error } = await supabase.from('issuer_companies').select('*').eq('id', invoiceData.issuer_company_id).single();
+    if (error) throw error;
     issuer = (co as IssuerCompany) ?? null;
+  } else if (invoiceData.issuer_company_id && issuer && !issuer.logo_url) {
+    const { data: companyLogo, error } = await supabase
+      .from('issuer_companies')
+      .select('logo_url')
+      .eq('id', invoiceData.issuer_company_id)
+      .single();
+    if (error) throw error;
+    if (companyLogo?.logo_url) issuer = { ...issuer, logo_url: companyLogo.logo_url };
   }
 
   return (
     <InvoiceView
-      invoice={invoice as SaleInvoice}
+      invoice={invoiceData}
       items={(items ?? []) as SaleInvoiceItem[]}
       payments={(payments ?? []) as PaymentReceipt[]}
       issuer={issuer ?? {}}

@@ -76,6 +76,7 @@ Set these in `.env.local` for local dev, and in your host's environment settings
 | `SUPABASE_SERVICE_ROLE_KEY` | ✅ | Server‑only key (admin uploads). **Never expose client‑side.** |
 | `NEXT_PUBLIC_SITE_URL` | ✅ | Origin for canonicals/OG/sitemap. Local: `http://localhost:3000`; prod: `https://ziea.in` |
 | `NEXT_PUBLIC_ASSET_BASE_URL` | prod | Public prefix for uploaded images, e.g. `https://ziea.in/cdn`. Local: leave unset → `/cdn` |
+| `NEXT_PUBLIC_CDN_ORIGIN` | optional, local dev | Origin used to load existing `/cdn/...` images from another host. Set to `https://ziea.in` to preview production CDN images locally; this does not change upload paths. |
 | `ASSET_UPLOAD_DIR` | prod | Absolute path where uploads are written, e.g. `/var/www/ziea/cdn`. Local: leave unset → `./storage/cdn` |
 | `RESEND_API_KEY` | for email | Resend API key (footer enquiry emails) |
 
@@ -108,7 +109,7 @@ proxy.ts                       # Next 16 middleware (session refresh)
 ### Architecture notes
 - **Static‑first:** catalog pages read Supabase through a **cookie‑less cached client** (`unstable_cache`, tagged `products` / `categories` / `branding`) and stay static/ISR; admin edits invalidate by tag via `revalidateTag`. Cart/wishlist read cookies → dynamic.
 - **Auth:** identity from a **locally‑verified JWT** (`getClaims()` — fast) with **Row‑Level Security** as the real ownership guard. Email/password + Google OAuth.
-- **Images:** admin‑gated upload writes to `ASSET_UPLOAD_DIR` and serves same‑origin from `/cdn`; fixed 4:5 frames (`SmartImage`) keep CLS at 0.
+- **Images:** uploads accept JPEG/PNG and preserve the originals in `ASSET_UPLOAD_DIR`; Hostinger/Next.js may serve optimized WebP/AVIF variants. Files serve same‑origin from `/cdn`; fixed 4:5 frames (`SmartImage`) keep CLS at 0.
 
 ---
 

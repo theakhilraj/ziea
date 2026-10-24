@@ -15,13 +15,10 @@ export const runtime = 'nodejs';
 
 const MAX_BYTES = 5 * 1024 * 1024; // 5 MB per image
 
-// Only these image types are accepted; the value is the extension we save with.
-// GIF and AVIF are intentionally excluded, and image/svg+xml is BANNED outright
-// (SVG is XML and can carry <script> → stored-XSS when served from our origin).
+// Only JPEG and PNG are accepted; SVG is excluded because it can carry scripts.
 const ALLOWED_TYPES = new Map<string, string>([
   ['image/jpeg', 'jpg'],
   ['image/png', 'png'],
-  ['image/webp', 'webp'],
 ]);
 
 // Public bytes only ever land here — never a caller-supplied path.
@@ -78,7 +75,7 @@ function safeFolder(input: string): string {
 
 /**
  * Sniff the real image type from magic bytes, returning the canonical extension
- * ('jpg' | 'png' | 'webp') or null. The declared multipart Content-Type is
+ * ('jpg' | 'png') or null. The declared multipart Content-Type is
  * caller-controlled and trivially spoofable, so we verify the ACTUAL bytes before
  * trusting/storing the upload — this is what makes the "image-only" guarantee
  * real and rejects SVG/HTML/JS/polyglot payloads that merely claim to be image/png.
@@ -95,14 +92,6 @@ function sniffImageExt(buf: Buffer): string | null {
     buf[4] === 0x0d && buf[5] === 0x0a && buf[6] === 0x1a && buf[7] === 0x0a
   ) {
     return 'png';
-  }
-  // WebP: "RIFF" .... "WEBP"
-  if (
-    buf.length >= 12 &&
-    buf.toString('ascii', 0, 4) === 'RIFF' &&
-    buf.toString('ascii', 8, 12) === 'WEBP'
-  ) {
-    return 'webp';
   }
   return null;
 }
@@ -160,7 +149,7 @@ export async function POST(request: Request) {
     if (!ext) {
       return NextResponse.json(
         {
-          error: `Unsupported file type: ${file.type || 'unknown'}. Allowed: JPEG, PNG, WebP.`,
+          error: `Unsupported file type: ${file.type || 'unknown'}. Allowed: JPEG, PNG.`,
         },
         { status: 415 },
       );
@@ -177,7 +166,7 @@ export async function POST(request: Request) {
     const sniffed = sniffImageExt(buffer);
     if (!sniffed || sniffed !== ext) {
       return NextResponse.json(
-        { error: 'File is not a valid JPEG, PNG or WebP image.' },
+        { error: 'File is not a valid JPEG or PNG image.' },
         { status: 415 },
       );
     }

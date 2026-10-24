@@ -59,7 +59,7 @@ const IN_MOBILE_RE = /^(?:\+?91|0)?[6-9]\d{9}$/;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
-const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
+const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png"];
 
 const SIZE_UNIT_OPTIONS: SelectOption[] = [
   { value: "cm", label: "Centimetres (cm)" },
@@ -252,7 +252,7 @@ export default function DesignInquiryForm({
   const uploadFile = useCallback(
     async (file: File): Promise<string | null> => {
       if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
-        showToast("Please upload a JPG, PNG or WebP image.", true);
+        showToast("Please upload a JPG or PNG image.", true);
         return null;
       }
       if (file.size > MAX_IMAGE_BYTES) {
@@ -701,7 +701,7 @@ export default function DesignInquiryForm({
                   <input
                     ref={fileInputRef}
                     type="file"
-                    accept="image/jpeg,image/png,image/webp"
+                    accept="image/jpeg,image/png"
                     className="hidden"
                     onChange={onSingleFileChange}
                   />
@@ -752,7 +752,7 @@ export default function DesignInquiryForm({
                             Click to upload reference image
                           </span>
                           <span className="font-jost text-xs text-muted">
-                            JPG/PNG/WebP up to 5MB
+                            JPG/PNG up to 5MB
                           </span>
                         </>
                       )}
@@ -1017,7 +1017,7 @@ export default function DesignInquiryForm({
                 <input
                   ref={moodboardInputRef}
                   type="file"
-                  accept="image/jpeg,image/png,image/webp"
+                  accept="image/jpeg,image/png"
                   className="hidden"
                   onChange={onMoodboardChange}
                 />

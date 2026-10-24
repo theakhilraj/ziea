@@ -54,7 +54,7 @@ const METHOD_LABELS: Record<Method, string> = {
 };
 
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
-const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
+const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png"];
 
 /** "17:00" -> "5:00 PM" for the success summary. */
 function to12Hour(hhmm: string): string {
@@ -216,7 +216,7 @@ export default function ConsultationForm({
   const handleFile = useCallback(
     async (file: File) => {
       if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
-        showToast("Please upload a JPG, PNG or WebP image.", true);
+        showToast("Please upload a JPG or PNG image.", true);
         return;
       }
       if (file.size > MAX_IMAGE_BYTES) {
@@ -557,7 +557,7 @@ export default function ConsultationForm({
               <input
                 ref={fileInputRef}
                 type="file"
-                accept="image/jpeg,image/png,image/webp"
+                accept="image/jpeg,image/png"
                 className="hidden"
                 onChange={onFileInputChange}
               />
@@ -608,7 +608,7 @@ export default function ConsultationForm({
                         Click to upload reference image
                       </span>
                       <span className="font-jost text-xs text-muted">
-                        JPG/PNG/WebP up to 5MB
+                        JPG/PNG up to 5MB
                       </span>
                     </>
                   )}

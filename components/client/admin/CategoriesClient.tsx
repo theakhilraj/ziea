@@ -456,7 +456,7 @@ export default function CategoriesClient({ initialCategories }: { initialCategor
                     </div>
                     <input
                       type="file"
-                      accept="image/*"
+                      accept="image/jpeg,image/png"
                       className="hidden"
                       onChange={handleFileUpload}
                       disabled={isSubmitting}

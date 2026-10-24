@@ -13,6 +13,20 @@ import { createClient } from '@/utils/supabase/client';
 import InvoiceDocument from './InvoiceDocument';
 import { RECEIPT_TYPES, type SaleInvoice, type SaleInvoiceItem, type PaymentReceipt, type IssuerCompany } from '@/utils/billing';
 
+type PdfFileHandle = {
+  createWritable: () => Promise<{
+    write: (data: Blob) => Promise<void>;
+    close: () => Promise<void>;
+  }>;
+};
+
+type SavePickerWindow = Window & {
+  showSaveFilePicker?: (options: {
+    suggestedName: string;
+    types: { description: string; accept: Record<string, string[]> }[];
+  }) => Promise<PdfFileHandle>;
+};
+
 const LIST_PATH = '/admin/sales-invoices';
 const COPY_TYPES = ['ORIGINAL FOR RECIPIENT', 'DUPLICATE FOR TRANSPORTER', 'TRIPLICATE FOR SUPPLIER', 'OFFICE COPY'];
 const inr = (v: number) => Number(v ?? 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -21,6 +35,58 @@ const fmt = (iso?: string | null) => { if (!iso) return ''; const [y, m, d] = is
 const todayISO = () => new Date().toISOString().slice(0, 10);
 const INPUT = 'w-full px-4 py-3 bg-white rounded-xl border border-[#d6c3b3] font-jost text-base text-[#2C3829] outline-none focus:border-primary focus:ring-4 focus:ring-primary/5';
 const LABEL = 'font-jost text-sm font-medium text-[#2C3829] mb-1 block';
+const MODERN_COLOR_FUNCTION = /\b(?:lab|oklab|lch|oklch|color)\([^)]*\)/gi;
+
+function makePdfCompatibleClone(source: HTMLElement, width: number) {
+  const clone = source.cloneNode(true) as HTMLElement;
+  const container = document.createElement('div');
+  container.style.cssText = `position:fixed;left:-100000px;top:0;width:${width}px;background:#fff;`;
+  clone.style.width = '100%';
+  clone.style.maxWidth = 'none';
+  clone.style.margin = '0';
+  for (const clampedText of Array.from(clone.querySelectorAll<HTMLElement>('.line-clamp-4'))) {
+    clampedText.classList.remove('line-clamp-4');
+    clampedText.style.display = 'block';
+    clampedText.style.overflow = 'visible';
+    clampedText.style.webkitLineClamp = 'unset';
+    clampedText.style.webkitBoxOrient = 'initial';
+  }
+  for (const cell of Array.from(clone.querySelectorAll<HTMLElement>('th, td'))) {
+    cell.style.setProperty('vertical-align', 'middle', 'important');
+  }
+  container.append(clone);
+  document.body.append(container);
+
+  const canvas = document.createElement('canvas');
+  canvas.width = 1;
+  canvas.height = 1;
+  const context = canvas.getContext('2d', { willReadFrequently: true });
+  if (!context) {
+    container.remove();
+    throw new Error('Could not prepare invoice colors for PDF export.');
+  }
+
+  for (const element of [clone, ...Array.from(clone.querySelectorAll<HTMLElement>('*'))]) {
+    const computed = window.getComputedStyle(element);
+    for (let index = 0; index < computed.length; index += 1) {
+      const property = computed.item(index);
+      const value = computed.getPropertyValue(property);
+      if (!MODERN_COLOR_FUNCTION.test(value)) continue;
+      MODERN_COLOR_FUNCTION.lastIndex = 0;
+      const compatibleValue = value.replace(MODERN_COLOR_FUNCTION, (color) => {
+        context.clearRect(0, 0, 1, 1);
+        context.fillStyle = color;
+        context.fillRect(0, 0, 1, 1);
+        const [red, green, blue, alpha] = context.getImageData(0, 0, 1, 1).data;
+        return `rgba(${red}, ${green}, ${blue}, ${Number((alpha / 255).toFixed(3))})`;
+      });
+      MODERN_COLOR_FUNCTION.lastIndex = 0;
+      element.style.setProperty(property, compatibleValue, 'important');
+    }
+  }
+
+  return { container, clone };
+}
 
 export default function InvoiceView({ invoice, items, payments, issuer }: {
   invoice: SaleInvoice;
@@ -33,10 +99,108 @@ export default function InvoiceView({ invoice, items, payments, issuer }: {
   const [copyLabel, setCopyLabel] = useState(COPY_TYPES[0]);
   const [confirmCancel, setConfirmCancel] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
   const [toast, setToast] = useState({ message: '', show: false, error: false });
   const showToast = (message: string, error = false) => {
     setToast({ message, show: true, error });
     setTimeout(() => setToast({ message: '', show: false, error: false }), 4000);
+  };
+
+  const downloadInvoicePdf = async () => {
+    setDownloadingPdf(true);
+    try {
+      const fileName = `${invoice.invoice_no.replace(/[<>:"/\\|?*\u0000-\u001f]/g, '-')}.pdf`;
+      const pickerWindow = window as SavePickerWindow;
+      const fileHandle = pickerWindow.showSaveFilePicker
+        ? await pickerWindow.showSaveFilePicker({
+            suggestedName: fileName,
+            types: [{ description: 'PDF document', accept: { 'application/pdf': ['.pdf'] } }],
+          })
+        : null;
+
+      const invoiceElement = document.querySelector<HTMLElement>('.invoice-print');
+      if (!invoiceElement) throw new Error('Invoice document is not available.');
+
+      const images = Array.from(invoiceElement.querySelectorAll<HTMLImageElement>('img'));
+      for (const image of images) {
+        for (let attempt = 0; attempt < 2 && image.naturalWidth === 0; attempt += 1) {
+          if (!image.complete) {
+            await new Promise<void>((resolve, reject) => {
+              const timeout = window.setTimeout(() => {
+                image.removeEventListener('load', onLoad);
+                image.removeEventListener('error', onError);
+                reject(new Error('Timed out loading the company logo.'));
+              }, 10000);
+              const finish = () => {
+                window.clearTimeout(timeout);
+                image.removeEventListener('load', onLoad);
+                image.removeEventListener('error', onError);
+                resolve();
+              };
+              const onLoad = () => finish();
+              const onError = () => finish();
+              image.addEventListener('load', onLoad, { once: true });
+              image.addEventListener('error', onError, { once: true });
+            });
+          }
+        }
+        if (image.naturalWidth === 0) {
+          throw new Error('The company logo could not be loaded. Check the logo in company settings.');
+        }
+      }
+
+      await document.fonts.ready;
+      const { jsPDF } = await import('jspdf');
+      const html2canvas = (await import('html2canvas')).default;
+      const pdf = new jsPDF({ format: 'a4', orientation: 'portrait', unit: 'mm' });
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const margin = 8;
+      const scale = 2;
+      const contentWidth = pageWidth - margin * 2;
+      const renderWidth = contentWidth * 96 / 25.4;
+      const { container, clone } = makePdfCompatibleClone(invoiceElement, renderWidth);
+      try {
+        const canvas = await html2canvas(clone, {
+          backgroundColor: '#ffffff',
+          scale,
+          useCORS: true,
+          width: renderWidth,
+          windowWidth: renderWidth,
+          scrollX: 0,
+          scrollY: 0,
+        });
+        const pageContentHeight = pageHeight - margin * 2;
+        const imageScale = Math.min(contentWidth / canvas.width, pageContentHeight / canvas.height);
+        const imageWidth = canvas.width * imageScale;
+        const imageHeight = canvas.height * imageScale;
+        pdf.addImage(
+          canvas,
+          'PNG',
+          (pageWidth - imageWidth) / 2,
+          margin,
+          imageWidth,
+          imageHeight,
+        );
+      } finally {
+        container.remove();
+      }
+
+      const blob = pdf.output('blob');
+      if (fileHandle) {
+        const writable = await fileHandle.createWritable();
+        await writable.write(blob);
+        await writable.close();
+      } else {
+        pdf.save(fileName);
+      }
+      showToast('Invoice PDF downloaded.');
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') return;
+      showToast(error instanceof Error ? error.message : 'Failed to create the invoice PDF.', true);
+    } finally {
+      setDownloadingPdf(false);
+    }
   };
 
   const cancelled = invoice.status === 'cancelled';
@@ -124,7 +288,7 @@ export default function InvoiceView({ invoice, items, payments, issuer }: {
   };
 
   return (
-    <main className="pt-20 lg:pt-6 px-6 lg:px-10 max-w-7xl mx-auto pb-10 min-h-screen">
+    <main className="invoice-page pt-20 lg:pt-6 px-6 lg:px-10 max-w-7xl mx-auto pb-10 min-h-screen">
       <Toast show={toast.show} message={toast.message} error={toast.error} />
 
       {/* Action bar (hidden when printing) */}
@@ -143,35 +307,39 @@ export default function InvoiceView({ invoice, items, payments, issuer }: {
           </div>
         </div>
 
-        <div className="flex items-center gap-2 flex-wrap">
-          <div className="w-64">
+        <div className="grid w-full grid-cols-2 gap-2 lg:flex lg:w-auto lg:items-center">
+          <div className="col-span-2 w-full lg:col-span-1 lg:w-64">
             <Select label="" value={copyLabel} onChange={setCopyLabel} allowNone={false}
               triggerClassName="!text-[13px] whitespace-nowrap" optionClassName="!text-[13px]"
               options={COPY_TYPES.map((c) => ({ value: c, label: c }))} />
           </div>
 
-          <Button variant="auth-primary" className="!w-auto !py-3 !px-6 !text-sm !font-medium whitespace-nowrap" onClick={() => window.print()}>
-            Print
+          <Button variant="auth-primary" className="!w-full lg:!w-auto !py-3 !px-3 lg:!px-6 !text-sm !font-medium whitespace-nowrap" onClick={downloadInvoicePdf} disabled={downloadingPdf}>
+            {downloadingPdf ? 'Preparing PDF…' : 'Download PDF'}
           </Button>
           {!cancelled && (
-            <Button variant="auth-social" className="!w-auto !py-3 !px-5 !text-sm !font-medium whitespace-nowrap" onClick={openPay}>
+            <Button variant="auth-social" className="!w-full lg:!w-auto !py-3 !px-3 lg:!px-5 !text-sm !font-medium whitespace-nowrap" onClick={openPay}>
               Add Payment
             </Button>
           )}
           {!cancelled && (
-            <Link href={`${LIST_PATH}/${invoice.id}/edit`} className={`${buttonBase} ${buttonVariants['auth-social']} !w-auto !py-3 !px-5 !text-sm !font-medium whitespace-nowrap`}>
+            <Link href={`${LIST_PATH}/${invoice.id}/edit`} className={`${buttonBase} ${buttonVariants['auth-social']} !w-full lg:!w-auto !py-3 !px-3 lg:!px-5 !text-sm !font-medium whitespace-nowrap`}>
               Edit
             </Link>
           )}
           {!cancelled && (
-            <Button variant="auth-social" className="!w-auto !py-3 !px-5 !text-sm !font-medium whitespace-nowrap !text-red-600 !border-red-300 hover:!bg-red-50" onClick={() => setConfirmCancel(true)}>
+            <Button variant="auth-social" className="!w-full lg:!w-auto !py-3 !px-3 lg:!px-5 !text-sm !font-medium whitespace-nowrap !text-red-600 !border-red-300 hover:!bg-red-50" onClick={() => setConfirmCancel(true)}>
               Cancel
             </Button>
           )}
         </div>
       </div>
 
-      <InvoiceDocument invoice={invoice} items={items} issuer={issuer} copyLabel={copyLabel} />
+      <div className="w-full overflow-x-auto">
+        <div className="min-w-[900px] lg:min-w-0">
+          <InvoiceDocument invoice={invoice} items={items} issuer={issuer} copyLabel={copyLabel} />
+        </div>
+      </div>
 
       {/* Payments (screen only) */}
       <div className="print:hidden mt-8 bg-white rounded-2xl border border-[#d6c3b3]/30 shadow-sm p-6">

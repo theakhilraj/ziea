@@ -8,6 +8,7 @@ import { MdArrowBack, MdOutlineBusiness, MdAddCircleOutline } from 'react-icons/
 import { Button } from '@/components/ui/Button';
 import Toast from '@/components/ui/Toast';
 import { createClient } from '@/utils/supabase/client';
+import { resolveImageUrl } from '@/utils/image-url';
 import type { IssuerCompany } from '@/utils/billing';
 
 const SETTINGS_PATH = '/admin/sales-invoices/settings';
@@ -124,6 +125,7 @@ export default function CompanyForm({ initial = null, companiesCount }: {
   const [uploading, setUploading] = useState(false);
   const [logoW, setLogoW] = useState<number | null>(initial?.logo_width ?? null);
   const [logoH, setLogoH] = useState<number | null>(initial?.logo_height ?? null);
+  const [logoLoadError, setLogoLoadError] = useState(false);
   const [error, setError] = useState('');
   const [toast, setToast] = useState({ message: '', show: false, error: false });
 
@@ -157,6 +159,7 @@ export default function CompanyForm({ initial = null, companiesCount }: {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to upload logo');
       set({ logo_url: data.url });
+      setLogoLoadError(false);
       const { w, h } = await readImageSize(file);
       setLogoW(w || null);
       setLogoH(h || null);
@@ -333,9 +336,26 @@ export default function CompanyForm({ initial = null, companiesCount }: {
               <section className="bg-white p-6 rounded-xl border border-[#d6c3b3]/30 shadow-sm space-y-4">
                 <SectionHead>Company Logo</SectionHead>
                 <div className="w-full h-32 rounded-xl bg-[#FAF7F2] border border-[#d6c3b3] overflow-hidden flex items-center justify-center">
-                  {form.logo_url ? (
+                  {form.logo_url && !logoLoadError ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={form.logo_url} alt="Logo" className="max-w-full max-h-full object-contain" />
+                    <img
+                      key={form.logo_url}
+                      src={resolveImageUrl(form.logo_url)}
+                      alt="Logo"
+                      className="max-w-full max-h-full object-contain"
+                      onError={(event) => {
+                        if (
+                          !event.currentTarget.dataset.localFallback &&
+                          form.logo_url.startsWith("/cdn/") &&
+                          resolveImageUrl(form.logo_url) !== form.logo_url
+                        ) {
+                          event.currentTarget.dataset.localFallback = "true";
+                          event.currentTarget.src = form.logo_url;
+                        } else {
+                          setLogoLoadError(true);
+                        }
+                      }}
+                    />
                   ) : (
                     <MdOutlineBusiness className="text-4xl text-[#7A9268]/60" />
                   )}
@@ -343,7 +363,7 @@ export default function CompanyForm({ initial = null, companiesCount }: {
                 <label className="cursor-pointer w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-[#d6c3b3] bg-white hover:bg-[#f3e6dc] text-sm text-[#2C3829] transition-colors">
                   <MdAddCircleOutline className="text-lg" />
                   {uploading ? 'Uploading…' : form.logo_url ? 'Replace logo' : 'Upload logo'}
-                  <input type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} disabled={uploading} />
+                  <input type="file" accept="image/jpeg,image/png" className="hidden" onChange={handleLogoUpload} disabled={uploading} />
                 </label>
                 {form.logo_url && logoW && logoH ? (
                   <p className="text-xs text-[#2C3829]/75 text-center">

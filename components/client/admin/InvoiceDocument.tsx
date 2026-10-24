@@ -1,4 +1,5 @@
 import type { SaleInvoice, SaleInvoiceItem, IssuerCompany } from '@/utils/billing';
+import { resolveImageUrl } from '@/utils/image-url';
 
 const inr = (v: number | string | null | undefined) =>
   Number(v ?? 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -10,6 +11,7 @@ const fmt = (iso?: string | null) => {
 };
 
 const B = 'border border-gray-400';
+const RATE_CELL = B;
 
 function KV({ label, value, bold, multiline }: { label: string; value?: string | null; bold?: boolean; multiline?: boolean }) {
   if (!value) return null;
@@ -33,7 +35,7 @@ function Meta({ label, value }: { label: string; value?: string | null }) {
 }
 function TotalRow({ label, value, bold }: { label: string; value: string; bold?: boolean }) {
   return (
-    <div className={`flex justify-between px-3 py-1 border-b border-gray-300 ${bold ? 'font-bold bg-gray-50' : ''}`}>
+    <div className={`flex justify-between px-3 ${bold ? 'py-1.5 font-bold bg-gray-100' : 'py-1'} border-b border-gray-300`}>
       <span>{label}</span>
       <span className="tabular-nums">{value}</span>
     </div>
@@ -55,41 +57,69 @@ export default function InvoiceDocument({ invoice, items, issuer, copyLabel = 'O
   return (
     <div className="invoice-print bg-white text-[#1a1a1a] text-[12px] leading-tight shadow-sm">
       {/* Header — brand + address on the left, contact block on the right (outside the box) */}
-      <div className="flex justify-between items-start gap-6 p-4">
-        <div className="flex gap-3 min-w-0">
+      <div className="flex flex-row justify-between items-center gap-6 px-4 pt-6 pb-2">
+        <div className="flex items-center gap-3 min-w-0">
           {issuer.logo_url ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={issuer.logo_url} alt="" className="h-16 w-auto object-contain shrink-0" />
+            <img
+              src={issuer.logo_url}
+              alt={`${issuer.name || 'Company'} logo`}
+              className="h-28 w-28 object-contain shrink-0"
+              onError={(event) => {
+                const image = event.currentTarget;
+                if (
+                  !image.dataset.cdnFallback &&
+                  issuer.logo_url?.startsWith('/cdn/') &&
+                  resolveImageUrl(issuer.logo_url) !== issuer.logo_url
+                ) {
+                  image.dataset.cdnFallback = 'true';
+                  image.src = resolveImageUrl(issuer.logo_url);
+                } else {
+                  image.hidden = true;
+                }
+              }}
+            />
           ) : null}
           <div className="min-w-0">
             <div className="text-xl font-bold text-[#111]">{issuer.name}</div>
             {issuer.address ? <div className="text-gray-700 whitespace-pre-line break-words max-w-md">{issuer.address}</div> : null}
           </div>
         </div>
-        <div className="text-left text-gray-700 shrink-0 leading-relaxed whitespace-nowrap">
-          {(issuer.signatory || issuer.name) ? <div><span className="font-medium text-[#111]">Name</span> : {issuer.signatory || issuer.name}</div> : null}
-          {issuer.phone ? <div><span className="font-medium text-[#111]">Phone</span> : {issuer.phone}</div> : null}
-          {issuer.email ? <div><span className="font-medium text-[#111]">Email</span> : {issuer.email}</div> : null}
+        <div className="text-left text-gray-700 shrink-0 leading-relaxed">
+          {(issuer.signatory || issuer.name) ? (
+            <div className="grid grid-cols-[3.5rem_auto] gap-x-1">
+              <span className="font-medium text-[#111]">Name</span><span>: {issuer.signatory || issuer.name}</span>
+            </div>
+          ) : null}
+          {issuer.phone ? (
+            <div className="grid grid-cols-[3.5rem_auto] gap-x-1">
+              <span className="font-medium text-[#111]">Phone</span><span>: {issuer.phone}</span>
+            </div>
+          ) : null}
+          {issuer.email ? (
+            <div className="grid grid-cols-[3.5rem_auto] gap-x-1">
+              <span className="font-medium text-[#111]">Email</span><span className="break-all">: {issuer.email}</span>
+            </div>
+          ) : null}
         </div>
       </div>
 
-      {/* Sage box wraps only the tax-invoice grid (GSTIN band → terms), with padding. */}
-      <div className="border border-[#7A9268] p-3">
+      {/* Keep the invoice content inset without an outer decorative frame. */}
+      <div className="px-3 pt-1 pb-3">
       <div className="border border-gray-400">
-      {/* GSTIN band — 50/50 split (aligns with the sections below); the invoice
-          type is absolutely centered across the full width. */}
+      {/* GSTIN band — the invoice type is centered across the full width. */}
       <div className="relative grid grid-cols-2 border-b border-gray-400 min-h-[40px]">
-        <div className="px-3 py-2 font-semibold border-r border-gray-400 self-center">GSTIN : {issuer.gstin || '-'}</div>
+        <div className="px-3 py-2 font-semibold self-center">GSTIN : {issuer.gstin || '-'}</div>
         <div className="px-3 py-2 text-right text-[11px] font-semibold self-center">{copyLabel}</div>
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <span className="text-blue-700 font-bold text-[15px] leading-none uppercase">{invoice.invoice_type || 'Tax Invoice'}</span>
+          <span className="font-bold text-[15px] leading-none uppercase">{invoice.invoice_type || 'Tax Invoice'}</span>
         </div>
       </div>
 
       {/* Customer + meta */}
-      <div className="grid grid-cols-2 border-b border-gray-400">
+      <div className="grid grid-cols-2 border-b border-gray-400" style={{ gridTemplateColumns: '50% 50%' }}>
         <div className="border-r border-gray-400">
-          <div className="font-semibold text-center border-b border-gray-400 py-1 bg-gray-50">Customer Detail</div>
+          <div className="font-semibold leading-normal text-center border-b border-gray-400 py-1.5 bg-gray-50">Customer Detail</div>
           <div className="p-3 space-y-0.5">
             <KV label="Name" value={invoice.party_name} bold />
             <KV label="Address" value={invoice.party_address} multiline />
@@ -109,14 +139,37 @@ export default function InvoiceDocument({ invoice, items, issuer, copyLabel = 'O
 
       {/* Items */}
       <div className="overflow-x-auto inv-scroll">
-        <table className="w-full border-collapse text-[11px]">
+        <table className="w-full table-fixed border-collapse text-[11px]">
+          <colgroup>
+            <col style={{ width: '4%' }} />
+            <col style={{ width: '22%' }} />
+            <col style={{ width: '8%' }} />
+            <col style={{ width: '7%' }} />
+            <col style={{ width: '9%' }} />
+            {intra ? (
+              <>
+                <col style={{ width: '9%' }} />
+                <col style={{ width: '10%' }} />
+                <col style={{ width: '10%' }} />
+                <col style={{ width: '10%' }} />
+                <col style={{ width: '11%' }} />
+              </>
+            ) : (
+              <>
+                <col style={{ width: '9%' }} />
+                <col style={{ width: '11%' }} />
+                <col style={{ width: '17%' }} />
+                <col style={{ width: '13%' }} />
+              </>
+            )}
+          </colgroup>
           <thead>
             <tr className="bg-gray-100 text-center">
               <th className={`${B} px-1 py-1.5`}>Sr</th>
               <th className={`${B} px-2 py-1.5 text-left`}>Name of Product / Service</th>
               <th className={`${B} px-1 py-1.5`}>HSN/SAC</th>
               <th className={`${B} px-1 py-1.5`}>Qty</th>
-              <th className={`${B} px-1 py-1.5`}>Rate</th>
+              <th className={`${RATE_CELL} px-1 py-1.5`}>Rate</th>
               <th className={`${B} px-1 py-1.5`}>Disc (₹)</th>
               <th className={`${B} px-1 py-1.5`}>Taxable</th>
               {intra ? (
@@ -142,43 +195,43 @@ export default function InvoiceDocument({ invoice, items, issuer, copyLabel = 'O
                   </td>
                   <td className={`${B} px-1 py-1.5`}>{it.hsn_sac || '-'}</td>
                   <td className={`${B} px-1 py-1.5 whitespace-nowrap`}>{Number(it.qty)} {it.uom || ''}</td>
-                  <td className={`${B} px-1 py-1.5 text-right`}>{inr(it.unit_price)}</td>
-                  <td className={`${B} px-1 py-1.5 text-right`}>{inr(disc)}</td>
-                  <td className={`${B} px-1 py-1.5 text-right`}>{inr(it.taxable_amount)}</td>
+                  <td className={`${RATE_CELL} px-1 py-1.5 text-center`}>{inr(it.unit_price)}</td>
+                  <td className={`${B} px-1 py-1.5 text-center`}>{inr(disc)}</td>
+                  <td className={`${B} px-1 py-1.5 text-center`}>{inr(it.taxable_amount)}</td>
                   {intra ? (
                     <>
-                      <td className={`${B} px-1 py-1.5 text-right whitespace-nowrap`}>{half}%<br />{inr(it.cgst_amount)}</td>
-                      <td className={`${B} px-1 py-1.5 text-right whitespace-nowrap`}>{half}%<br />{inr(it.sgst_amount)}</td>
+                      <td className={`${B} px-1 py-1.5 text-center whitespace-nowrap`}>{half}%<br />{inr(it.cgst_amount)}</td>
+                      <td className={`${B} px-1 py-1.5 text-center whitespace-nowrap`}>{half}%<br />{inr(it.sgst_amount)}</td>
                     </>
                   ) : (
-                    <td className={`${B} px-1 py-1.5 text-right whitespace-nowrap`}>{Number(it.gst_rate)}%<br />{inr(it.igst_amount)}</td>
+                    <td className={`${B} px-1 py-1.5 text-center whitespace-nowrap`}>{Number(it.gst_rate)}%<br />{inr(it.igst_amount)}</td>
                   )}
-                  <td className={`${B} px-1 py-1.5 text-right font-semibold`}>{inr(it.line_total)}</td>
+                  <td className={`${B} px-1 py-1.5 text-center font-semibold`}>{inr(it.line_total)}</td>
                 </tr>
               );
             })}
             <tr className="bg-gray-50 font-semibold text-center">
               <td className={`${B} px-1 py-1.5`} colSpan={3}>Total</td>
               <td className={`${B} px-1 py-1.5`}>{totalQty}</td>
-              <td className={B}></td>
-              <td className={`${B} px-1 py-1.5 text-right`}>{inr(totalDisc)}</td>
-              <td className={`${B} px-1 py-1.5 text-right`}>{inr(invoice.subtotal)}</td>
+              <td className={`${RATE_CELL} px-1 py-1.5`}></td>
+              <td className={`${B} px-1 py-1.5 text-center`}>{inr(totalDisc)}</td>
+              <td className={`${B} px-1 py-1.5 text-center`}>{inr(invoice.subtotal)}</td>
               {intra ? (
                 <>
-                  <td className={`${B} px-1 py-1.5 text-right`}>{inr(invoice.cgst_total)}</td>
-                  <td className={`${B} px-1 py-1.5 text-right`}>{inr(invoice.sgst_total)}</td>
+                  <td className={`${B} px-1 py-1.5 text-center`}>{inr(invoice.cgst_total)}</td>
+                  <td className={`${B} px-1 py-1.5 text-center`}>{inr(invoice.sgst_total)}</td>
                 </>
               ) : (
-                <td className={`${B} px-1 py-1.5 text-right`}>{inr(invoice.igst_total)}</td>
+                <td className={`${B} px-1 py-1.5 text-center`}>{inr(invoice.igst_total)}</td>
               )}
-              <td className={`${B} px-1 py-1.5 text-right`}>{inr(invoice.grand_total)}</td>
+              <td className={`${B} px-1 py-1.5 text-center`}>{inr(invoice.grand_total)}</td>
             </tr>
           </tbody>
         </table>
       </div>
 
       {/* Totals + words */}
-      <div className="grid grid-cols-2 border-b border-gray-400">
+      <div className="grid grid-cols-2 border-b border-gray-400" style={{ gridTemplateColumns: '50% 50%' }}>
         <div className="border-r border-gray-400 p-3">
           <div className="font-semibold mb-1">Total in words</div>
           <div className="uppercase">{invoice.amount_in_words}</div>
@@ -202,9 +255,9 @@ export default function InvoiceDocument({ invoice, items, issuer, copyLabel = 'O
       </div>
 
       {/* Bank + signatory */}
-      <div className="grid grid-cols-2 border-b border-gray-400">
+      <div className="grid grid-cols-2 border-b border-gray-400" style={{ gridTemplateColumns: '50% 50%' }}>
         <div className="border-r border-gray-400">
-          <div className="font-semibold text-center border-b border-gray-400 py-1 bg-gray-50">Bank Details</div>
+          <div className="font-semibold leading-normal text-center border-b border-gray-400 py-1.5 bg-gray-50">Bank Details</div>
           <div className="p-3 space-y-0.5">
             <KV label="Name" value={issuer.bank_name} />
             <KV label="Branch" value={issuer.bank_branch} />

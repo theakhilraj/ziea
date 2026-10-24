@@ -487,7 +487,7 @@ export default function AddProductForm({ categories = [], initialData }: { categ
 
           <input
             ref={fileInputRef}
-            accept="image/*"
+            accept="image/jpeg,image/png"
             className="hidden"
             multiple
             type="file"

@@ -12,10 +12,6 @@ const MAX_BYTES = 15 * 1024 * 1024; // 15 MB per image
 const ALLOWED_TYPES = new Map<string, string>([
   ['image/jpeg', 'jpg'],
   ['image/png', 'png'],
-  ['image/webp', 'webp'],
-  ['image/gif', 'gif'],
-  ['image/avif', 'avif'],
-  ['image/svg+xml', 'svg'],
 ]);
 
 // HOSTINGER FILESYSTEM STORAGE — the app runs as a persistent Node server on
@@ -54,6 +50,31 @@ function safeFolder(input: string): string {
   );
 }
 
+function sniffImageExt(buffer: Buffer): string | null {
+  if (
+    buffer.length >= 3 &&
+    buffer[0] === 0xff &&
+    buffer[1] === 0xd8 &&
+    buffer[2] === 0xff
+  ) {
+    return 'jpg';
+  }
+  if (
+    buffer.length >= 8 &&
+    buffer[0] === 0x89 &&
+    buffer[1] === 0x50 &&
+    buffer[2] === 0x4e &&
+    buffer[3] === 0x47 &&
+    buffer[4] === 0x0d &&
+    buffer[5] === 0x0a &&
+    buffer[6] === 0x1a &&
+    buffer[7] === 0x0a
+  ) {
+    return 'png';
+  }
+  return null;
+}
+
 export async function POST(request: Request) {
   try {
     // Admin-only: uploads must never be callable by anonymous users.
@@ -73,7 +94,7 @@ export async function POST(request: Request) {
     const ext = ALLOWED_TYPES.get(file.type);
     if (!ext) {
       return NextResponse.json(
-        { error: `Unsupported file type: ${file.type || 'unknown'}` },
+        { error: `Unsupported file type: ${file.type || 'unknown'}. Allowed: JPEG, PNG.` },
         { status: 415 },
       );
     }
@@ -85,9 +106,17 @@ export async function POST(request: Request) {
     const unique = `${Date.now()}-${randomBytes(4).toString('hex')}`;
     const finalName = `${unique}-${slugify(file.name)}.${ext}`;
     const destDir = path.join(UPLOAD_DIR, folder);
+    const buffer = Buffer.from(await file.arrayBuffer());
+    const actualExt = sniffImageExt(buffer);
+    if (!actualExt || actualExt !== ext) {
+      return NextResponse.json(
+        { error: 'File is not a valid JPEG or PNG image.' },
+        { status: 415 },
+      );
+    }
 
     await mkdir(destDir, { recursive: true });
-    await writeFile(path.join(destDir, finalName), Buffer.from(await file.arrayBuffer()));
+    await writeFile(path.join(destDir, finalName), buffer);
 
     // Public URL served either statically by Hostinger (public_html/cdn) or by
     // the app's own /cdn/[...path] route (dev, next start, or fallback).

@@ -145,9 +145,11 @@ export default function ProductCard({
         </div>
 
         {deliveryLabel && (
-          <p className="flex items-center gap-1.5 text-[13px] font-semibold text-[#2C3829] mt-1.5">
-            <MdOutlineLocalShipping className="text-[16px] text-[#2C3829]" />
-            Deliverable by {deliveryLabel}
+          <p className="flex items-start gap-1.5 text-[13px] font-semibold text-[#2C3829] mt-1.5">
+            <MdOutlineLocalShipping className="mt-0.5 shrink-0 text-[16px] text-[#2C3829]" />
+            <span className="min-w-0">
+              Deliverable by {deliveryLabel}
+            </span>
           </p>
         )}
 

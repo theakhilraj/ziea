@@ -22,6 +22,7 @@ import {
   MdOutlinePersonAdd,
   MdHome,
   MdOutlineStyle,
+  MdKeyboardArrowDown,
   MdOutlineInfo,
   MdOutlineMail,
   MdOutlineInventory2,
@@ -51,6 +52,15 @@ export default function Header() {
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isMenuClosing, setIsMenuClosing] = useState(false);
+  const [isCategoriesExpanded, setIsCategoriesExpanded] = useState(false);
+  const [mobileCategories, setMobileCategories] = useState<
+    { id: string; name: string }[]
+  >([]);
+  const [hasLoadedMobileCategories, setHasLoadedMobileCategories] =
+    useState(false);
+  const [isLoadingMobileCategories, setIsLoadingMobileCategories] =
+    useState(false);
+  const [mobileCategoriesError, setMobileCategoriesError] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isMobileUserOpen, setIsMobileUserOpen] = useState(false);
@@ -81,6 +91,44 @@ export default function Header() {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  const toggleMobileCategories = async () => {
+    if (isCategoriesExpanded) {
+      setIsCategoriesExpanded(false);
+      return;
+    }
+
+    setIsCategoriesExpanded(true);
+    if (hasLoadedMobileCategories || isLoadingMobileCategories) return;
+
+    setIsLoadingMobileCategories(true);
+    setMobileCategoriesError(false);
+
+    try {
+      const { data, error } = await supabase
+        .from("categories")
+        .select("id, name")
+        .order("created_at", { ascending: true });
+
+      if (error) {
+        console.error("Failed to load mobile navigation categories:", error);
+        setMobileCategoriesError(true);
+      } else {
+        setMobileCategories(
+          (data ?? []).map((category) => ({
+            id: category.id,
+            name: category.name,
+          })),
+        );
+        setHasLoadedMobileCategories(true);
+      }
+    } catch (error) {
+      console.error("Failed to load mobile navigation categories:", error);
+      setMobileCategoriesError(true);
+    } finally {
+      setIsLoadingMobileCategories(false);
+    }
+  };
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -201,6 +249,7 @@ export default function Header() {
   // Animated close: play the slide-out, then unmount once it finishes.
   const closeMenu = () => {
     setIsMenuClosing(true);
+    setIsCategoriesExpanded(false);
     setTimeout(() => {
       setIsMenuOpen(false);
       setIsMenuClosing(false);
@@ -227,7 +276,7 @@ export default function Header() {
 
   const menuItems = [
     { icon: <MdHome className="text-2xl" />, label: "Home", href: "/" },
-    { icon: <MdOutlineStyle className="text-2xl" />, label: "Categories", href: "/collections" },
+    { icon: <MdOutlineStyle className="text-2xl" />, label: "Categories", href: "/collections", expandable: true },
     { icon: <MdOutlineReceiptLong className="text-2xl" />, label: "My Orders", href: "/orders" },
     { icon: <MdOutlineInfo className="text-2xl" />, label: "About Us", href: "/about-us" },
     { icon: <MdOutlineMail className="text-2xl" />, label: "Contact Us", href: "/contact-us" },
@@ -399,9 +448,72 @@ export default function Header() {
               <Image src="/ZIEA_Splash2.png" alt="ZIEA" width={500} height={500} className="h-24 w-auto object-contain" />
             </div>
 
-            <nav className="flex flex-col gap-1">
+            <nav className="min-h-0 overflow-y-auto flex flex-col gap-1">
               {menuItems.map((item, index) => {
                 const isActive = item.href === pathname;
+                if ("expandable" in item && item.expandable) {
+                  return (
+                    <div key={index}>
+                      <button
+                        type="button"
+                        aria-expanded={isCategoriesExpanded}
+                        aria-controls="mobile-category-links"
+                        onClick={toggleMobileCategories}
+                        className={`flex w-full items-center gap-4 rounded-xl px-3 py-2.5 text-left transition-colors ${
+                          pathname.startsWith("/collections")
+                            ? "bg-primary/15 text-primary font-semibold"
+                            : "text-text hover:bg-primary/10 hover:text-primary"
+                        }`}
+                      >
+                        {item.icon}
+                        <span className="font-label-lg flex-1">
+                          {item.label}
+                        </span>
+                        <MdKeyboardArrowDown
+                          aria-hidden="true"
+                          className={`text-2xl transition-transform ${
+                            isCategoriesExpanded ? "rotate-180" : ""
+                          }`}
+                        />
+                      </button>
+                      <div
+                        id="mobile-category-links"
+                        hidden={!isCategoriesExpanded}
+                        className="ml-7 mt-1 flex flex-col gap-1 pl-4"
+                      >
+                        {isLoadingMobileCategories ? (
+                          <p className="px-2 py-2 text-sm text-text/60">
+                            Loading categories…
+                          </p>
+                        ) : mobileCategoriesError ? (
+                          <p
+                            role="status"
+                            className="px-2 py-2 text-sm text-text/60"
+                          >
+                            Couldn’t load categories. Close and reopen the
+                            menu to try again.
+                          </p>
+                        ) : mobileCategories.length > 0 ? (
+                          mobileCategories.map((category) => (
+                            <Link
+                              key={category.id}
+                              href={`/collections?category=${encodeURIComponent(category.id)}`}
+                              onClick={closeMenu}
+                              className="rounded-lg px-3 py-2 text-sm text-text/80 transition-colors hover:bg-primary/10 hover:text-primary"
+                            >
+                              {category.name}
+                            </Link>
+                          ))
+                        ) : (
+                          <p className="px-2 py-2 text-sm text-text/60">
+                            No categories available.
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  );
+                }
+
                 return (
                   <Link
                     key={index}

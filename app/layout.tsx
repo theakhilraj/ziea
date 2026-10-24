@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Playfair_Display, Jost } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 import WishlistProvider from "@/components/client/product/WishlistProvider";
 
@@ -112,6 +113,18 @@ export default function RootLayout({
       <body className="flex flex-col min-h-screen">
         <WishlistProvider>{children}</WishlistProvider>
       </body>
+      <Script id="google-analytics" strategy="afterInteractive">
+        {`
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){window.dataLayer.push(arguments);}
+          gtag('js', new Date());
+          gtag('config', 'G-VLTWG5B5N9');
+        `}
+      </Script>
+      <Script
+        src="https://www.googletagmanager.com/gtag/js?id=G-VLTWG5B5N9"
+        strategy="afterInteractive"
+      />
     </html>
   );
 }

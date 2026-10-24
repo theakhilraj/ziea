@@ -240,14 +240,50 @@
     visibility: visible;
   }
 
+  .invoice-print [class~="border"],
+  .invoice-print [class~="border-b"],
+  .invoice-print [class~="border-l"],
+  .invoice-print [class~="border-r"],
+  .invoice-print [class~="border-t"] {
+    border-color: #6b7280 !important;
+  }
+
+  .invoice-print [class~="border"] {
+    border-width: 1px !important;
+  }
+
+  .invoice-print [class~="border-b"] {
+    border-bottom-width: 1px !important;
+  }
+
+  .invoice-print [class~="border-l"] {
+    border-left-width: 1px !important;
+  }
+
+  .invoice-print [class~="border-r"] {
+    border-right-width: 1px !important;
+  }
+
+  .invoice-print [class~="border-t"] {
+    border-top-width: 1px !important;
+  }
+
+  .invoice-page {
+    width: auto !important;
+    max-width: none !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
   .invoice-print {
-    position: fixed;   /* fixed → relative to the page, ignoring the centered max-w container */
-    left: 0;
-    top: 0;
+    position: static;
     width: 100%;
     max-width: none;
     margin: 0;
     box-shadow: none !important;   /* keep the sage frame + padding in print */
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
 
   /* Let the items table lay out fully (no horizontal scroll clip in print). */

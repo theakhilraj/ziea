@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { resolveImageUrl } from "@/utils/image-url";
 
 interface SmartImageProps {
   src: string;
@@ -34,17 +35,19 @@ export default function SmartImage({
   className = "",
   quality,
 }: SmartImageProps) {
+  const imageSrc = resolveImageUrl(src);
+
   // Legacy BunnyCDN images can't be fetched by the server-side optimizer
   // (hotlink protection), so serve them straight to the browser like before.
   // New/migrated images on our own domain get fully optimized.
-  const unoptimized = /(^https?:)?\/\/[^/]*b-cdn\.net\//.test(src);
+  const unoptimized = /(^https?:)?\/\/[^/]*b-cdn\.net\//.test(imageSrc);
 
   return (
     // object-cover fills the frame; object-position picks which part of the image
     // is visible (0% = top/left, 100% = bottom/right) so panning works at any zoom
     // and across mismatched aspect ratios. zoom (>100%) scales in from the center.
     <Image
-      src={src}
+      src={imageSrc}
       alt={alt}
       fill
       sizes={sizes}
