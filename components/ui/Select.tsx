@@ -21,9 +21,10 @@ interface SelectProps {
   triggerClassName?: string;
   /** Extra classes merged onto each dropdown option (e.g. compact font). */
   optionClassName?: string;
+  disabled?: boolean;
 }
 
-export function Select({ label, value, onChange, options, placeholder = "Select an option", allowAdd, onAdd, allowNone = true, triggerClassName = "", optionClassName = "" }: SelectProps) {
+export function Select({ label, value, onChange, options, placeholder = "Select an option", allowAdd, onAdd, allowNone = true, triggerClassName = "", optionClassName = "", disabled = false }: SelectProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [newInput, setNewInput] = useState('');
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -46,8 +47,11 @@ export function Select({ label, value, onChange, options, placeholder = "Select 
         <label className="font-jost text-sm font-medium text-[#2C3829] mb-1 block">{label}</label>
       )}
       <div
-        className={`w-full px-4 py-3 bg-white border border-[#d6c3b3] rounded-xl font-jost font-normal text-base text-[#2C3829] transition-all outline-none focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/5 hover:border-primary/50 duration-200 cursor-pointer flex justify-between items-center ${triggerClassName}`}
-        onClick={() => setIsOpen(!isOpen)}
+        aria-disabled={disabled}
+        className={`w-full px-4 py-3 bg-white border border-[#d6c3b3] rounded-xl font-jost font-normal text-base text-[#2C3829] transition-all outline-none focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/5 hover:border-primary/50 duration-200 ${disabled ? "cursor-not-allowed opacity-60" : "cursor-pointer"} flex justify-between items-center ${triggerClassName}`}
+        onClick={() => {
+          if (!disabled) setIsOpen(!isOpen);
+        }}
       >
         <span className={`truncate ${value ? "text-[#2C3829]" : "text-[#2C3829]/50"}`}>
           {selectedOption ? selectedOption.label : (value || placeholder)}
@@ -55,7 +59,7 @@ export function Select({ label, value, onChange, options, placeholder = "Select 
         <MdKeyboardArrowDown className={`text-xl transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
       </div>
 
-      {isOpen && (
+      {isOpen && !disabled && (
         <div className="absolute z-50 w-full mt-2 bg-white border border-[#d6c3b3]/50 rounded-xl shadow-lg shadow-black/5 overflow-hidden font-jost animate-in fade-in slide-in-from-top-2 duration-200">
           {allowAdd && onAdd && (
             <div className="p-2 border-b border-[#d6c3b3]/30">

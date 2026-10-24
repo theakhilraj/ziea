@@ -6,6 +6,7 @@ import {
   buildSalesInvoiceAnalytics,
   type BarDatum,
   type InteractionRange,
+  type SalesInvoiceKind,
   type SalesInvoiceRange,
 } from "@/utils/analytics";
 import { getAdminClaims } from "@/utils/admin/session";
@@ -28,9 +29,16 @@ export async function getInteractionSeries(
   }
 }
 
-export async function getSalesInvoiceAnalytics(range: SalesInvoiceRange, selectedMonth?: string) {
+export async function getSalesInvoiceAnalytics(
+  range: SalesInvoiceRange,
+  selectedMonth?: string,
+  invoiceKind: SalesInvoiceKind = "all",
+) {
   if (!["all_time", "this_month", "last_3_months"].includes(range)) {
     throw new Error("Invalid sales analytics range.");
+  }
+  if (!["all", "gst", "normal"].includes(invoiceKind)) {
+    throw new Error("Invalid sales invoice type.");
   }
   if (selectedMonth && !/^\d{4}-(0[1-9]|1[0-2])$/.test(selectedMonth)) {
     throw new Error("A valid month is required for sales invoice analytics.");
@@ -38,5 +46,5 @@ export async function getSalesInvoiceAnalytics(range: SalesInvoiceRange, selecte
   const claims = await getAdminClaims();
   if (!claims || claims.role !== "Admin") throw new Error("Unauthorized.");
   const supabase = await createClient();
-  return buildSalesInvoiceAnalytics(supabase, range, selectedMonth);
+  return buildSalesInvoiceAnalytics(supabase, range, selectedMonth, invoiceKind);
 }

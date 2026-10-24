@@ -64,6 +64,7 @@ export interface BillingProduct {
 /** A saved invoice header (row of sale_invoices). */
 export interface SaleInvoice {
   id: string;
+  invoice_kind: 'gst' | 'normal';
   issuer_company_id: string;
   billing_party_id: string | null;
   invoice_prefix: string | null;
@@ -76,6 +77,7 @@ export interface SaleInvoice {
   party_address: string | null;
   party_gstin: string | null;
   party_phone: string | null;
+  party_email: string | null;
   party_contact: string | null;
   place_of_supply: string | null;
   party_state_code: string | null;

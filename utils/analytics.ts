@@ -27,6 +27,7 @@ export interface ActivityItem {
 
 export type InteractionRange = "daily" | "weekly" | "monthly";
 export type SalesInvoiceRange = "all_time" | "this_month" | "last_3_months";
+export type SalesInvoiceKind = "all" | "gst" | "normal";
 
 export interface SalesInvoiceBucket {
   label: string;
@@ -36,6 +37,7 @@ export interface SalesInvoiceBucket {
 
 export interface SalesInvoiceAnalytics {
   range: SalesInvoiceRange;
+  invoiceKind: SalesInvoiceKind;
   selectedMonth: string;
   invoiceCount: number;
   invoiced: number;
@@ -175,6 +177,7 @@ export async function buildSalesInvoiceAnalytics(
   supabase: SupabaseClient,
   range: SalesInvoiceRange,
   selectedMonth?: string,
+  invoiceKind: SalesInvoiceKind = "all",
 ): Promise<SalesInvoiceAnalytics> {
   const today = businessDateParts();
   const currentMonth = Number(today.month) - 1;
@@ -207,24 +210,34 @@ export async function buildSalesInvoiceAnalytics(
     outstanding: number | string | null;
   };
 
-  const rows: InvoiceAmounts[] = [];
-  const pageSize = 1000;
-  for (let offset = 0; ; offset += pageSize) {
-    let query = supabase
-      .from("sale_invoices")
-      .select("id, invoice_date, grand_total, amount_paid, outstanding")
-      .eq("status", "saved")
-      .order("invoice_date", { ascending: true })
-      .order("id", { ascending: true })
-      .lt("invoice_date", endExclusiveDate)
-      .range(offset, offset + pageSize - 1);
-    if (startDate) query = query.gte("invoice_date", startDate);
-    const { data, error } = await query;
-    if (error) throw new Error(`Could not load sales invoice analytics: ${error.message}`);
-    const page = (data ?? []) as InvoiceAmounts[];
-    rows.push(...page);
-    if (page.length < pageSize) break;
+  const fetchRows = async (applyInvoiceKind: boolean) => {
+    const result: InvoiceAmounts[] = [];
+    const pageSize = 1000;
+    for (let offset = 0; ; offset += pageSize) {
+      let query = supabase
+        .from("sale_invoices")
+        .select("id, invoice_date, grand_total, amount_paid, outstanding")
+        .eq("status", "saved")
+        .order("invoice_date", { ascending: true })
+        .order("id", { ascending: true })
+        .lt("invoice_date", endExclusiveDate)
+        .range(offset, offset + pageSize - 1);
+      if (startDate) query = query.gte("invoice_date", startDate);
+      if (applyInvoiceKind && invoiceKind !== "all") query = query.eq("invoice_kind", invoiceKind);
+      const { data, error } = await query;
+      if (error) return { rows: result, error };
+      const page = (data ?? []) as InvoiceAmounts[];
+      result.push(...page);
+      if (page.length < pageSize) break;
+    }
+    return { rows: result, error: null };
+  };
+
+  let { rows, error } = await fetchRows(invoiceKind !== "all");
+  if (error && invoiceKind === "gst" && error.message.toLowerCase().includes("invoice_kind")) {
+    ({ rows, error } = await fetchRows(false));
   }
+  if (error) throw new Error(`Could not load sales invoice analytics: ${error.message}`);
 
   const buckets = new Map<string, SalesInvoiceBucket & { sortKey: number }>();
   const ensureBucket = (key: string, label: string, sortKey: number) => {
@@ -269,6 +282,7 @@ export async function buildSalesInvoiceAnalytics(
 
   return {
     range,
+    invoiceKind,
     selectedMonth: effectiveMonth ?? currentMonthKey,
     invoiceCount: rows.length,
     invoiced: rows.reduce((total, row) => total + Number(row.grand_total ?? 0), 0),

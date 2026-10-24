@@ -3,11 +3,12 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { MdArrowBack, MdAdd, MdDelete, MdCalendarToday, MdKeyboardArrowDown, MdInfoOutline } from 'react-icons/md';
+import { MdArrowBack, MdAdd, MdDelete, MdKeyboardArrowDown, MdInfoOutline } from 'react-icons/md';
 import { Button } from '@/components/ui/Button';
 import { Select } from '@/components/ui/Select';
-import { Calendar } from '@/components/ui/Calendar';
+import { InvoiceDatePicker } from '@/components/client/admin/InvoiceDatePicker';
 import Toast from '@/components/ui/Toast';
+import { InvoiceProductPicker } from '@/components/client/admin/InvoiceProductPicker';
 import { createClient } from '@/utils/supabase/client';
 import { computeLine, computeInvoice, resolveTaxType, financialYear } from '@/utils/gst';
 import {
@@ -59,36 +60,6 @@ function TextArea({ label, value, onChange, rows = 2 }: { label?: string; value:
 
 const inr = (n: number) => n.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const todayISO = () => new Date().toISOString().slice(0, 10);
-const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-const fmtLong = (iso: string) => { const [y, m, d] = iso.split('-'); return `${d}-${MONTHS[Number(m) - 1]}-${y}`; };
-
-/** Date input styled like the shared Select, opening the app's Calendar in a popover. */
-function DateField({ label, value, onChange, minISO, maxISO, placeholder = 'Select date' }: {
-  label?: string; value: string; onChange: (v: string) => void; minISO: string; maxISO: string; placeholder?: string;
-}) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const h = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
-    document.addEventListener('mousedown', h);
-    return () => document.removeEventListener('mousedown', h);
-  }, []);
-  return (
-    <div className="relative" ref={ref}>
-      {label && <label className={LABEL_CLS}>{label}</label>}
-      <div onClick={() => setOpen((o) => !o)}
-        className={`${FIELD_CLS} ${bcls(false)} flex justify-between items-center cursor-pointer`}>
-        <span className={value ? 'text-[#2C3829]' : 'text-[#2C3829]/50'}>{value ? fmtLong(value) : placeholder}</span>
-        <MdCalendarToday className="text-lg text-[#2C3829]/50 shrink-0" />
-      </div>
-      {open && (
-        <div className="absolute z-50 mt-2 w-[300px] max-w-[90vw] bg-white border border-[#d6c3b3]/50 rounded-xl shadow-lg shadow-black/5 p-3 animate-in fade-in slide-in-from-top-2 duration-200">
-          <Calendar value={value || null} onChange={(iso) => { onChange(iso); setOpen(false); }} minISO={minISO} maxISO={maxISO} todayISO={todayISO()} />
-        </div>
-      )}
-    </div>
-  );
-}
 
 const SectionHead = ({ children }: { children: React.ReactNode }) => (
   <h3 className="font-jost text-lg font-semibold text-[#2C3829] border-b border-[#d6c3b3]/30 pb-3">{children}</h3>
@@ -107,36 +78,6 @@ function useOutside(ref: React.RefObject<HTMLElement | null>, onOutside: () => v
 }
 
 const menuCls = 'absolute z-50 mt-1 max-h-56 overflow-auto bg-white border border-[#d6c3b3]/50 rounded-xl shadow-lg shadow-black/5 py-1';
-
-/** Searchable product picker — filters the catalog as you type, and accepts an
- *  ad-hoc name (not in the catalog) too. Styled like the app, not the native datalist. */
-function ProductCombo({ value, products, onType, onPick }: {
-  value: string; products: BillingProduct[]; onType: (name: string) => void; onPick: (p: BillingProduct) => void;
-}) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-  useOutside(ref, () => setOpen(false));
-  const q = value.trim().toLowerCase();
-  const filtered = (q ? products.filter((p) => p.name.toLowerCase().includes(q)) : products).slice(0, 30);
-  return (
-    <div className="relative" ref={ref}>
-      <input value={value} placeholder="Product name" onFocus={() => setOpen(true)}
-        onChange={(e) => { onType(e.target.value); setOpen(true); }} className={`${ROW_CTRL} pr-8`} />
-      <MdKeyboardArrowDown className="absolute right-2 top-1/2 -translate-y-1/2 text-[#2C3829]/50 pointer-events-none" />
-      {open && filtered.length > 0 && (
-        <div className={`${menuCls} w-64`}>
-          {filtered.map((p) => (
-            <button type="button" key={p.id} onClick={() => { onPick(p); setOpen(false); }}
-              className="w-full text-left px-3 py-2 text-sm text-[#2C3829] hover:bg-[#F5F0E8] flex justify-between gap-2">
-              <span className="truncate">{p.name}</span>
-              {p.product_code && <span className="text-xs text-[#2C3829]/40 shrink-0">{p.product_code}</span>}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
 
 /** Small info icon with a hover tooltip, for explaining a column header. */
 function InfoTip({ text }: { text: string }) {
@@ -466,8 +407,8 @@ export default function InvoiceForm({ companies, parties, products, initial }: {
               )}
               <Select label="Invoice Type" value={invoiceType} onChange={setInvoiceType} allowNone={false}
                 options={INVOICE_TYPES.map((t) => ({ value: t, label: t }))} />
-              <DateField label="Invoice Date" value={invoiceDate} onChange={setInvoiceDate} minISO={MIN_ISO} maxISO={MAX_ISO} />
-              <DateField label="Due Date" value={dueDate} onChange={setDueDate} minISO={invoiceDate || MIN_ISO} maxISO={MAX_ISO} placeholder="No due date" />
+              <InvoiceDatePicker label="Invoice Date" value={invoiceDate} onChange={setInvoiceDate} minISO={MIN_ISO} maxISO={MAX_ISO} todayISO={todayISO()} />
+              <InvoiceDatePicker label="Due Date" value={dueDate} onChange={setDueDate} minISO={invoiceDate || MIN_ISO} maxISO={MAX_ISO} todayISO={todayISO()} placeholder="No due date" />
               <Select label="Delivery Mode" value={deliveryMode} onChange={setDeliveryMode} placeholder="Select delivery mode" allowNone={false}
                 options={DELIVERY_MODES.map((d) => ({ value: d, label: d }))} />
               <Select label="Reverse Charge" value={reverseCharge ? 'yes' : 'no'} onChange={(v) => setReverseCharge(v === 'yes')} allowNone={false}
@@ -490,7 +431,7 @@ export default function InvoiceForm({ companies, parties, products, initial }: {
                     onChange={(e) => setCustomNo(e.target.value.replace(/\D/g, ''))}
                     className="flex-1 min-w-0 px-3 py-3 font-jost text-base text-[#2C3829] outline-none bg-white" />
                 </div>
-                <p className="text-xs text-[#2C3829]/50 mt-1 ml-1">You type only the number — the prefix ({invoicePrefix}) and financial year ({fy}) are added automatically. Must be unique for this company.</p>
+                <p className="text-xs text-[#2C3829]/50 mt-1 ml-1">You type only the number - the prefix ({invoicePrefix}) and financial year ({fy}) are added automatically. Must be unique for this company.</p>
               </div>
             ) : (
               <p className="text-xs text-[#2C3829]/60">Invoice number is assigned automatically on save (per {issuer.name} · this financial year).</p>
@@ -610,7 +551,7 @@ export default function InvoiceForm({ companies, parties, products, initial }: {
                     <tr key={l.key} className="border-b border-[#d6c3b3]/20 last:border-0">
                       <td className="px-4 py-2.5 text-[#2C3829]/50">{i + 1}</td>
                       <td className="px-3 py-2.5">
-                        <ProductCombo value={l.name} products={products}
+                        <InvoiceProductPicker value={l.name} products={products}
                           onType={(v) => onNameChange(l.key, v)} onPick={(p) => selectProduct(l.key, p)} />
                       </td>
                       <td className="px-3 py-2.5"><input value={l.hsn_sac} onChange={(e) => setLine(l.key, { hsn_sac: e.target.value })} className={ROW_CTRL} /></td>

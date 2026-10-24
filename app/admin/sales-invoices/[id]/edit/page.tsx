@@ -16,6 +16,7 @@ export default async function EditInvoicePage({ params }: { params: Promise<{ id
 
   const { data: invoice } = await supabase.from('sale_invoices').select('*').eq('id', id).single();
   if (!invoice) notFound();
+  if (invoice.invoice_kind === 'normal') redirect(`/admin/sales-invoices/normal/${id}/edit`);
   // Cancelled invoices are read-only.
   if (invoice.status === 'cancelled') redirect(`/admin/sales-invoices/${id}`);
 

@@ -11,6 +11,7 @@ import ConfirmationModal from '@/components/ui/ConfirmationModal';
 import Toast from '@/components/ui/Toast';
 import { createClient } from '@/utils/supabase/client';
 import InvoiceDocument from './InvoiceDocument';
+import NormalInvoiceDocument from './NormalInvoiceDocument';
 import { RECEIPT_TYPES, type SaleInvoice, type SaleInvoiceItem, type PaymentReceipt, type IssuerCompany } from '@/utils/billing';
 
 type PdfFileHandle = {
@@ -204,6 +205,7 @@ export default function InvoiceView({ invoice, items, payments, issuer }: {
   };
 
   const cancelled = invoice.status === 'cancelled';
+  const isNormalInvoice = invoice.invoice_kind === 'normal';
   const year = new Date().getFullYear();
 
   // Payment sheet
@@ -308,11 +310,13 @@ export default function InvoiceView({ invoice, items, payments, issuer }: {
         </div>
 
         <div className="grid w-full grid-cols-2 gap-2 lg:flex lg:w-auto lg:items-center">
-          <div className="col-span-2 w-full lg:col-span-1 lg:w-64">
-            <Select label="" value={copyLabel} onChange={setCopyLabel} allowNone={false}
-              triggerClassName="!text-[13px] whitespace-nowrap" optionClassName="!text-[13px]"
-              options={COPY_TYPES.map((c) => ({ value: c, label: c }))} />
-          </div>
+          {!isNormalInvoice && (
+            <div className="col-span-2 w-full lg:col-span-1 lg:w-64">
+              <Select label="" value={copyLabel} onChange={setCopyLabel} allowNone={false}
+                triggerClassName="!text-[13px] whitespace-nowrap" optionClassName="!text-[13px]"
+                options={COPY_TYPES.map((c) => ({ value: c, label: c }))} />
+            </div>
+          )}
 
           <Button variant="auth-primary" className="!w-full lg:!w-auto !py-3 !px-3 lg:!px-6 !text-sm !font-medium whitespace-nowrap" onClick={downloadInvoicePdf} disabled={downloadingPdf}>
             {downloadingPdf ? 'Preparing PDF…' : 'Download PDF'}
@@ -323,7 +327,7 @@ export default function InvoiceView({ invoice, items, payments, issuer }: {
             </Button>
           )}
           {!cancelled && (
-            <Link href={`${LIST_PATH}/${invoice.id}/edit`} className={`${buttonBase} ${buttonVariants['auth-social']} !w-full lg:!w-auto !py-3 !px-3 lg:!px-5 !text-sm !font-medium whitespace-nowrap`}>
+            <Link href={isNormalInvoice ? `${LIST_PATH}/normal/${invoice.id}/edit` : `${LIST_PATH}/${invoice.id}/edit`} className={`${buttonBase} ${buttonVariants['auth-social']} !w-full lg:!w-auto !py-3 !px-3 lg:!px-5 !text-sm !font-medium whitespace-nowrap`}>
               Edit
             </Link>
           )}
@@ -337,7 +341,9 @@ export default function InvoiceView({ invoice, items, payments, issuer }: {
 
       <div className="w-full overflow-x-auto">
         <div className="min-w-[900px] lg:min-w-0">
-          <InvoiceDocument invoice={invoice} items={items} issuer={issuer} copyLabel={copyLabel} />
+          {isNormalInvoice
+            ? <NormalInvoiceDocument invoice={invoice} items={items} issuer={issuer} />
+            : <InvoiceDocument invoice={invoice} items={items} issuer={issuer} copyLabel={copyLabel} />}
         </div>
       </div>
 
@@ -363,7 +369,6 @@ export default function InvoiceView({ invoice, items, payments, issuer }: {
                   {p.note ? <span className="text-[#2C3829]/50 italic">· {p.note}</span> : null}
                 </div>
                 {p.attachment_url ? (
-                  // eslint-disable-next-line @next/next/no-img-element
                   <a href={p.attachment_url} target="_blank" rel="noreferrer" className="text-xs text-[#4b6138] hover:underline">Attachment</a>
                 ) : null}
               </div>

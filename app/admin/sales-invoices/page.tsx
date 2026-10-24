@@ -3,6 +3,7 @@ import { MdOutlineReceiptLong } from 'react-icons/md';
 import { Card } from '@/components/ui/Card';
 import { AnalyticsPagination } from '@/components/ui/AnalyticsPagination';
 import { buttonBase, buttonVariants } from '@/components/ui/Button';
+import { NewSalesInvoiceDropdown } from '@/components/client/admin/NewSalesInvoiceDropdown';
 import { createClient } from '@/utils/supabase/server';
 
 export const metadata = {
@@ -13,7 +14,7 @@ export const metadata = {
 export const dynamic = 'force-dynamic';
 
 const PAGE_SIZE = 20;
-const COLUMNS = ['Invoice No', 'Company Name', 'Invoice Date', 'Total', 'Payment Type', 'Outstanding', 'Action'];
+const COLUMNS = ['Type', 'Invoice No', 'Customer', 'Invoice Date', 'Total', 'Payment Type', 'Outstanding', 'Action'];
 
 const primaryLink = `${buttonBase} ${buttonVariants['auth-primary']} !w-auto !py-3 px-6 !text-sm`;
 const secondaryLink = `${buttonBase} ${buttonVariants['auth-social']} !w-auto !py-3 px-5 !text-sm`;
@@ -41,6 +42,7 @@ interface InvoiceRow {
   payment_type: string | null;
   outstanding: number;
   status: string;
+  invoice_kind?: 'gst' | 'normal';
 }
 
 export default async function SalesInvoicesPage({
@@ -54,23 +56,44 @@ export default async function SalesInvoicesPage({
   const page = Number.isSafeInteger(requestedPage) && requestedPage > 0 ? requestedPage : 1;
   const from = (page - 1) * PAGE_SIZE;
   const to = from + PAGE_SIZE - 1;
-  const [invRes, companyCountRes] = await Promise.all([
+  const [invoiceResult, companyCountRes] = await Promise.all([
     supabase
       .from('sale_invoices')
-      .select('id, invoice_no, party_name, invoice_date, grand_total, payment_type, outstanding, status', { count: 'exact' })
+      .select('id, invoice_no, party_name, invoice_date, grand_total, payment_type, outstanding, status, invoice_kind', { count: 'exact' })
       .order('invoice_date', { ascending: false })
       .order('created_at', { ascending: false })
       .range(from, to),
     supabase.from('issuer_companies').select('*', { count: 'exact', head: true }),
   ]);
-  const invoices = (invRes.data ?? []) as InvoiceRow[];
-  const totalPages = Math.max(1, Math.ceil((invRes.count ?? 0) / PAGE_SIZE));
+  let invoiceRows = invoiceResult.data as InvoiceRow[] | null;
+  let invoiceCount = invoiceResult.count;
+
+  if (
+    invoiceResult.error &&
+    ['42703', 'PGRST204'].includes(invoiceResult.error.code ?? '') &&
+    invoiceResult.error.message.toLowerCase().includes('invoice_kind')
+  ) {
+    const legacyResult = await supabase
+      .from('sale_invoices')
+      .select('id, invoice_no, party_name, invoice_date, grand_total, payment_type, outstanding, status', { count: 'exact' })
+      .order('invoice_date', { ascending: false })
+      .order('created_at', { ascending: false })
+      .range(from, to);
+    if (legacyResult.error) throw legacyResult.error;
+    invoiceRows = (legacyResult.data ?? []).map((row) => ({ ...row, invoice_kind: 'gst' }));
+    invoiceCount = legacyResult.count;
+  } else if (invoiceResult.error) {
+    throw invoiceResult.error;
+  }
+  if (companyCountRes.error) throw companyCountRes.error;
+  const invoices = invoiceRows ?? [];
+  const totalPages = Math.max(1, Math.ceil((invoiceCount ?? 0) / PAGE_SIZE));
 
   // Constraint: an invoice needs an issuer company. Without one, steer the CTA to
   // Company Settings instead of the (guarded) create page.
   const hasCompany = (companyCountRes.count ?? 0) > 0;
-  const ctaHref = hasCompany ? '/admin/sales-invoices/new' : '/admin/sales-invoices/settings';
-  const ctaLabel = hasCompany ? 'New Invoice' : 'Add a Company First';
+  const ctaHref = '/admin/sales-invoices/settings';
+  const ctaLabel = 'Add a Company First';
 
   return (
     <main className="pt-20 lg:pt-6 px-6 lg:px-10 max-w-7xl mx-auto pb-6 lg:pb-10 min-h-screen">
@@ -78,12 +101,14 @@ export default async function SalesInvoicesPage({
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 lg:gap-0 mb-6 border-b border-[#d6c3b3]/30 pb-5 lg:pb-6">
         <div>
           <h1 className="font-jost text-2xl lg:text-3xl text-[#2C3829] mb-2 font-bold">Sales Invoices</h1>
-          <p className="font-body-md lg:font-body-lg text-[#2C3829]/70">Create, store and print GST invoices.</p>
+          <p className="font-body-md lg:font-body-lg text-[#2C3829]/70">Create, store and print GST and normal invoices.</p>
         </div>
         <div className="flex items-center gap-3">
           <Link href="/admin/sales-invoices/settings" className={secondaryLink}>Company Settings</Link>
           {invoices.length > 0 && (
-            <Link href={ctaHref} className={primaryLink}>{ctaLabel}</Link>
+            hasCompany
+              ? <NewSalesInvoiceDropdown buttonClassName={primaryLink} />
+              : <Link href={ctaHref} className={primaryLink}>{ctaLabel}</Link>
           )}
         </div>
       </div>
@@ -97,10 +122,12 @@ export default async function SalesInvoicesPage({
               <h3 className="font-jost text-lg font-semibold text-[#2C3829] mb-1">No invoices yet</h3>
               <p className="font-body-md text-sm text-[#2C3829]/60 mb-5">
                 {hasCompany
-                  ? 'Create your first GST invoice — it will appear here, ready to view, edit, download or cancel.'
+                  ? 'Create your first GST or normal invoice — it will appear here, ready to view, edit, download or cancel.'
                   : 'First add a company profile (logo, GSTIN, bank) — every invoice is issued from one. Then you can create invoices.'}
               </p>
-              <Link href={ctaHref} className={primaryLink}>{ctaLabel}</Link>
+              {hasCompany
+                ? <NewSalesInvoiceDropdown buttonClassName={primaryLink} />
+                : <Link href={ctaHref} className={primaryLink}>{ctaLabel}</Link>}
             </div>
           ) : invoices.map((inv) => (
             <Link key={inv.id} href={`/admin/sales-invoices/${inv.id}`} className="block">
@@ -109,6 +136,9 @@ export default async function SalesInvoicesPage({
                   <div className="min-w-0">
                     <p className="text-[10px] font-semibold uppercase tracking-wider text-[#2C3829]/50">Invoice No.</p>
                     <p className="mt-1 truncate font-jost font-semibold text-[#2C3829]">{inv.invoice_no}</p>
+                    <span className={`mt-1 inline-flex rounded-full px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wide ${inv.invoice_kind === 'normal' ? 'bg-[#A8BC9A]/20 text-[#4b6138]' : 'bg-[#d6c3b3]/20 text-[#765d4d]'}`}>
+                      {inv.invoice_kind === 'normal' ? 'Normal' : 'GST'}
+                    </span>
                   </div>
                   <div className="min-w-0">
                     <p className="text-[10px] font-semibold uppercase tracking-wider text-[#2C3829]/50">Customer</p>
@@ -166,16 +196,23 @@ export default async function SalesInvoicesPage({
                       <h3 className="font-jost text-lg font-semibold text-[#2C3829] mb-1">No invoices yet</h3>
                       <p className="font-body-md text-[#2C3829]/60 mb-6 max-w-sm">
                         {hasCompany
-                          ? 'Create your first GST invoice — it will appear here, ready to view, edit, print or cancel.'
+                          ? 'Create your first GST or normal invoice — it will appear here, ready to view, edit, print or cancel.'
                           : 'First add a company profile (logo, GSTIN, bank) — every invoice is issued from one. Then you can create invoices.'}
                       </p>
-                      <Link href={ctaHref} className={primaryLink}>{ctaLabel}</Link>
+                      {hasCompany
+                        ? <NewSalesInvoiceDropdown buttonClassName={primaryLink} />
+                        : <Link href={ctaHref} className={primaryLink}>{ctaLabel}</Link>}
                     </div>
                   </td>
                 </tr>
               ) : (
                 invoices.map((inv) => (
                   <tr key={inv.id} className={`border-b border-[#d6c3b3]/20 last:border-0 hover:bg-[#F5F0E8]/40 ${inv.status === 'cancelled' ? 'opacity-50' : ''}`}>
+                    <td className="px-5 py-3.5 whitespace-nowrap">
+                      <span className={`mr-2 rounded-full px-2 py-1 text-[10px] font-semibold uppercase tracking-wide ${inv.invoice_kind === 'normal' ? 'bg-[#A8BC9A]/20 text-[#4b6138]' : 'bg-[#d6c3b3]/20 text-[#765d4d]'}`}>
+                        {inv.invoice_kind === 'normal' ? 'Normal' : 'GST'}
+                      </span>
+                    </td>
                     <td className="px-5 py-3.5 font-jost font-medium text-[#2C3829] whitespace-nowrap">{inv.invoice_no}</td>
                     <td className="px-5 py-3.5 text-[#2C3829] max-w-[220px] truncate">{inv.party_name}</td>
                     <td className="px-5 py-3.5 text-[#2C3829]/80 whitespace-nowrap">{fmtDate(inv.invoice_date)}</td>

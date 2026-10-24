@@ -5,13 +5,22 @@ import Link from "next/link";
 import { MdChevronLeft, MdChevronRight } from "react-icons/md";
 import { Card } from "@/components/ui/Card";
 import { BarChart } from "@/components/ui/BarChart";
-import type { SalesInvoiceAnalytics as SalesInvoiceAnalyticsData, SalesInvoiceRange } from "@/utils/analytics";
+import type {
+  SalesInvoiceAnalytics as SalesInvoiceAnalyticsData,
+  SalesInvoiceKind,
+  SalesInvoiceRange,
+} from "@/utils/analytics";
 import { getSalesInvoiceAnalytics } from "@/app/actions/analytics";
 
 const RANGES: { value: SalesInvoiceRange; label: string }[] = [
   { value: "all_time", label: "All time" },
   { value: "this_month", label: "This month" },
   { value: "last_3_months", label: "Last 3 months" },
+];
+const INVOICE_KINDS: { value: SalesInvoiceKind; label: string }[] = [
+  { value: "all", label: "All" },
+  { value: "gst", label: "GST" },
+  { value: "normal", label: "Normal" },
 ];
 
 const inr = new Intl.NumberFormat("en-IN", {
@@ -27,6 +36,7 @@ const compactInr = new Intl.NumberFormat("en-IN", {
 export function SalesInvoiceAnalytics({ initial }: { initial: SalesInvoiceAnalyticsData }) {
   const [data, setData] = useState(initial);
   const [selectedMonth, setSelectedMonth] = useState(initial.selectedMonth);
+  const [invoiceKind, setInvoiceKind] = useState(initial.invoiceKind);
   const [error, setError] = useState("");
   const [isPending, startTransition] = useTransition();
 
@@ -35,7 +45,7 @@ export function SalesInvoiceAnalytics({ initial }: { initial: SalesInvoiceAnalyt
     setError("");
     startTransition(async () => {
       try {
-        const nextData = await getSalesInvoiceAnalytics(range, selectedMonth);
+        const nextData = await getSalesInvoiceAnalytics(range, selectedMonth, invoiceKind);
         setData(nextData);
         setSelectedMonth(nextData.selectedMonth);
       } catch (cause) {
@@ -49,9 +59,24 @@ export function SalesInvoiceAnalytics({ initial }: { initial: SalesInvoiceAnalyt
     setError("");
     startTransition(async () => {
       try {
-        const nextData = await getSalesInvoiceAnalytics(data.range, month);
+        const nextData = await getSalesInvoiceAnalytics(data.range, month, invoiceKind);
         setData(nextData);
         setSelectedMonth(nextData.selectedMonth);
+      } catch (cause) {
+        setError(cause instanceof Error ? cause.message : "Could not load sales analytics.");
+      }
+    });
+  };
+
+  const selectInvoiceKind = (kind: SalesInvoiceKind) => {
+    if (kind === invoiceKind) return;
+    setError("");
+    startTransition(async () => {
+      try {
+        const nextData = await getSalesInvoiceAnalytics(data.range, selectedMonth, kind);
+        setData(nextData);
+        setSelectedMonth(nextData.selectedMonth);
+        setInvoiceKind(nextData.invoiceKind);
       } catch (cause) {
         setError(cause instanceof Error ? cause.message : "Could not load sales analytics.");
       }
@@ -99,23 +124,43 @@ export function SalesInvoiceAnalytics({ initial }: { initial: SalesInvoiceAnalyt
       </div>
 
       <div className="mt-6 flex flex-wrap items-center justify-between gap-4 border-t border-[#d6c3b3]/25 pt-5">
-        <div className="flex w-full gap-1 overflow-x-auto rounded-full bg-[#f9ebe1] p-1 sm:w-auto">
-          {RANGES.map((range) => (
-            <button
-              key={range.value}
-              type="button"
-              aria-pressed={range.value === data.range}
-              disabled={isPending}
-              onClick={() => selectRange(range.value)}
-              className={`flex-1 rounded-full px-3 py-2 text-center text-xs font-medium transition-colors sm:flex-none sm:px-4 sm:text-sm ${
-                range.value === data.range
-                  ? "bg-white text-[#2C3829] shadow-sm"
-                  : "text-[#2C3829]/60 hover:text-[#2C3829]"
-              }`}
-            >
-              {range.label}
-            </button>
-          ))}
+        <div className="flex w-full flex-wrap gap-3 sm:w-auto">
+          <div role="group" aria-label="Date range" className="flex w-full gap-1 overflow-x-auto rounded-full bg-[#f9ebe1] p-1 sm:w-auto">
+            {RANGES.map((range) => (
+              <button
+                key={range.value}
+                type="button"
+                aria-pressed={range.value === data.range}
+                disabled={isPending}
+                onClick={() => selectRange(range.value)}
+                className={`flex-1 rounded-full px-3 py-2 text-center text-xs font-medium transition-colors sm:flex-none sm:px-4 sm:text-sm ${
+                  range.value === data.range
+                    ? "bg-white text-[#2C3829] shadow-sm"
+                    : "text-[#2C3829]/60 hover:text-[#2C3829]"
+                }`}
+              >
+                {range.label}
+              </button>
+            ))}
+          </div>
+          <div role="group" aria-label="Invoice type" className="flex w-full gap-1 overflow-x-auto rounded-full bg-[#f9ebe1] p-1 sm:w-auto">
+            {INVOICE_KINDS.map((kind) => (
+              <button
+                key={kind.value}
+                type="button"
+                aria-pressed={kind.value === invoiceKind}
+                disabled={isPending}
+                onClick={() => selectInvoiceKind(kind.value)}
+                className={`flex-1 rounded-full px-3 py-2 text-center text-xs font-medium transition-colors sm:flex-none sm:px-4 sm:text-sm ${
+                  kind.value === invoiceKind
+                    ? "bg-white text-[#2C3829] shadow-sm"
+                    : "text-[#2C3829]/60 hover:text-[#2C3829]"
+                }`}
+              >
+                {kind.label}
+              </button>
+            ))}
+          </div>
         </div>
         <div className="flex w-full items-center justify-between gap-3 sm:w-auto sm:justify-normal">
           <button
@@ -153,7 +198,9 @@ export function SalesInvoiceAnalytics({ initial }: { initial: SalesInvoiceAnalyt
       {error ? (
         <p role="alert" className="py-12 text-center text-sm text-red-600">{error}</p>
       ) : data.buckets.length === 0 ? (
-        <p className="py-12 text-center text-sm text-[#2C3829]/50">No issued invoices in this period.</p>
+        <p className="py-12 text-center text-sm text-[#2C3829]/50">
+          No {invoiceKind === "all" ? "" : `${invoiceKind === "gst" ? "GST" : "normal"} `}invoices in this period.
+        </p>
       ) : (
         <div className={`mt-6 w-full overflow-hidden transition-opacity ${isPending ? "opacity-40" : ""}`}>
           <BarChart
